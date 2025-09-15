@@ -57,6 +57,9 @@ OPENAI_API_KEY=your_openai_api_key
 
 # Perplexity API Configuration (optional)
 PERPLEXITY_API_KEY=your_perplexity_api_key
+
+SENDGRID_API_KEY=
+SENDGRID_VERIFIED_SENDER=
 ```
 
 ### Step 2: Create Virtual Environment and Install Dependencies
