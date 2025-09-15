@@ -293,265 +293,197 @@ Your goal is to provide helpful information while making the caller feel comfort
         # Generate prompt
         prompt = self.generate_ultravox_prompt(company_data, web_research)
         
-        return prompt# Inbound Calling System
+        return prompt# Faith Agency Inbound Calling System
 
-A standalone AI-powered inbound calling system that handles incoming calls using advanced AI technology. This system processes calls through extension-based routing and provides intelligent conversations using Ultravox AI.
+AI-powered phone system that handles incoming calls, routes to departments, collects contact information, and automatically sends follow-up SMS messages.
 
-## Features
+## 🎯 Features
 
-- **Extension-Based Routing**: Callers enter 5-digit extensions to reach specific companies
-- **AI-Powered Conversations**: Uses Ultravox AI for natural, context-aware conversations
-- **Company Research**: Automatically researches companies using Perplexity AI for personalized conversations
-- **Call Recording & Transcription**: Automatically records and transcripts all calls
-- **Sentiment Analysis**: Analyzes call sentiment using OpenAI GPT-4
-- **Database Storage**: Stores all call data and company information in PostgreSQL
+- **AI-Powered Conversations**: Uses Ultravox AI for natural voice interactions
+- **Department Routing**: Routes calls to VIVA, Casting, Press, Tech Support, Sales, or Management
+- **Smart Data Collection**: Collects caller information (name, phone, email, organization, purpose)
+- **Automatic SMS Follow-up**: Sends Faith Agency website link after each call
+- **CSV Logging**: Saves all contact data to Progress.csv for analysis
+- **OpenAI Integration**: Intelligent contact information extraction from call transcripts
 
-## System Architecture
+## 🏗️ Project Structure
 
 ```
-Incoming Call → Twilio → FastAPI Backend → Extension Validation → Company Lookup → AI Conversation (Ultravox) → Call Recording → Sentiment Analysis → Database Storage
+├── main.py                 # FastAPI application with call handling endpoints
+├── functions.py            # Core business logic and helper functions
+├── twilio_sms.py          # SMS sending functionality
+├── requirements.txt        # Python dependencies
+├── .env                   # Environment variables (create this)
+├── Progress.csv           # Contact data storage (auto-generated)
+└── README.md              # This file
 ```
 
-## Quick Start
+### 📁 File Descriptions
 
-### Prerequisites
+- **`main.py`**: Main FastAPI server handling incoming call webhooks from Twilio
+- **`functions.py`**: Contains all business logic including AI prompts, data extraction, CSV operations, and call monitoring
+- **`twilio_sms.py`**: Handles SMS sending through Twilio API
+- **`Progress.csv`**: Automatically generated file storing all collected contact information
 
-- Python 3.8+
-- PostgreSQL database
-- Twilio account with phone number
-- Ultravox API key
-- OpenAI API key (optional, for sentiment analysis)
-- Perplexity API key (optional, for company research)
+## 🚀 Setup Instructions
 
-### Installation
+### Step 1: Create Environment File
 
-1. **Clone or copy this folder to your desired location**
-
-2. **Create a virtual environment**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment variables**:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your actual API keys and database credentials
-   ```
-
-5. **Set up the database**:
-   ```bash
-   # Create database (if it doesn't exist)
-   createdb inbound_calling_system
-   
-   # Populate with sample data
-   python db_populate.py
-   ```
-
-### Configuration
-
-Edit the `.env` file with your credentials:
+Create a `.env` file in the root directory with the following structure:
 
 ```env
-# Database
-DATABASE_URL=postgresql://username:password@localhost:5432/inbound_calling_system
+# Server Configuration
+HOST=0.0.0.0
+PORT=8000
 
-# Twilio
+# Database Configuration (optional - commented out)
+# DATABASE_URL=postgresql://username:password@localhost:5432/database_name
+
+# Twilio Configuration (for handling phone calls)
 TWILIO_ACCOUNT_SID=your_twilio_account_sid
 TWILIO_AUTH_TOKEN=your_twilio_auth_token
 TWILIO_PHONE_NUMBER=your_twilio_phone_number
 
-# APIs
+# Ultravox API Configuration (for AI conversations)
 ULTRAVOX_API_KEY=your_ultravox_api_key
+
+# OpenAI Configuration (for contact data extraction)
 OPENAI_API_KEY=your_openai_api_key
+
+# Perplexity API Configuration (optional)
 PERPLEXITY_API_KEY=your_perplexity_api_key
 ```
 
-### Running the Application
+### Step 2: Create Virtual Environment and Install Dependencies
 
-1. **Start the server**:
-   ```bash
-   python main.py
-   ```
-   
-   The API server will run on `http://localhost:8000`
-
-2. **Configure Twilio Webhook**:
-   - In your Twilio Console, set the webhook URL for incoming calls to:
-   ```
-   http://your-domain.com/api/incoming
-   ```
-
-3. **Test the system**:
-   - Call your Twilio phone number
-   - Enter a 5-digit extension (e.g., 00001, 00002, 00003, 00004, or 00005)
-   - Experience the AI conversation
-
-## How It Works
-
-### Call Flow
-
-1. **Customer calls** your Twilio phone number
-2. **System prompts** for a 5-digit extension
-3. **Extension validation** against the company database
-4. **Company lookup** and data retrieval
-5. **AI prompt generation** using company information and research
-6. **Ultravox AI** conducts the conversation
-7. **Call monitoring** tracks completion in the background
-8. **Transcription** and sentiment analysis are performed
-9. **Data storage** saves all call information to the database
-
-### Extension System
-
-The system uses 5-digit extensions to route calls to specific companies:
-- `00001` - TechStart Solutions
-- `00002` - Digital Marketing Pro
-- `00003` - Healthcare Innovations
-- `00004` - FinTech Dynamics
-- `00005` - EcoGreen Energy
-
-### AI Features
-
-- **Dynamic Prompts**: AI conversations are personalized based on company data
-- **Company Research**: Real-time research using Perplexity AI
-- **Sentiment Analysis**: Post-call sentiment analysis using OpenAI
-- **Natural Conversations**: Powered by Ultravox voice AI
-
-## API Endpoints
-
-- `POST /api/incoming` - Handle incoming Twilio calls
-- `POST /extension_handling` - Process extension input
-- `GET /health` - Health check endpoint
-
-## Database Schema
-
-### Companies Table
-- Extension-based routing
-- Company information and metadata
-- Contact details and research data
-
-### Inbound Calls Table
-- Call records and timestamps
-- Caller information
-- Transcriptions and sentiment analysis
-- Company associations
-
-## Adding New Companies
-
-### Method 1: CSV Import
-
-1. Create a CSV file with company data
-2. Run the population script:
-   ```bash
-   python db_populate.py your_companies.csv
-   ```
-
-### Method 2: Manual Addition
-
-Use the CRUD operations in `crud.py` to add companies programmatically.
-
-### Required Company Fields
-
-- `extension`: 5-digit unique identifier
-- `company_name`: Company name
-- `website`: Company website (optional)
-- `industry`: Industry category (optional)
-- `seo_description`: Company description (optional)
-
-## Customization
-
-### AI Conversation Prompts
-
-Edit the system prompts in `main.py` or modify the `gpt.py` file to customize AI behavior.
-
-### Call Flow Logic
-
-Modify `main.py` to change the call flow, add features, or integrate additional services.
-
-### Database Schema
-
-Update `models.py` to add new fields or tables as needed.
-
-## Deployment
-
-### Local Development
 ```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+# On Linux/Mac:
+source venv/bin/activate
+# On Windows:
+# venv\Scripts\activate
+
+# Install required packages
+pip install -r requirements.txt
+```
+
+### Step 3: Run the Application
+
+```bash
+# Start the FastAPI server
 python main.py
+
+# Alternative using uvicorn directly:
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-### Production Deployment
+## 🔧 API Configuration
 
-1. **Using Docker**:
-   ```bash
-   docker build -t inbound-calling-system .
-   docker run -p 8000:8000 inbound-calling-system
-   ```
+### Required API Keys
 
-2. **Using systemd** (Linux):
-   Create a service file and enable it for production deployment.
+1. **Twilio Account**: Sign up at [twilio.com](https://twilio.com)
+   - Get Account SID, Auth Token, and Phone Number
+   - Configure webhook URL to point to your server's `/api/incoming` endpoint
 
-3. **Cloud Deployment**:
-   Deploy to AWS, GCP, or Azure with proper environment configuration.
+2. **Ultravox API**: Get API key from [ultravox.ai](https://ultravox.ai)
+   - Used for AI voice conversations
 
-## Monitoring
+3. **OpenAI API**: Get API key from [openai.com](https://openai.com)
+   - Used for intelligent contact information extraction
 
-- Check logs for call processing information
-- Monitor database for call records
-- Use the health endpoint for system status
+### Webhook Configuration
 
-## Troubleshooting
+Configure your Twilio phone number webhook URL to:
+```
+https://your-domain.com/api/incoming
+```
 
-### Common Issues
-
-1. **Database Connection Error**:
-   - Verify DATABASE_URL in .env
-   - Ensure PostgreSQL is running
-   - Check database permissions
-
-2. **Twilio Webhook Errors**:
-   - Verify webhook URL is accessible
-   - Check Twilio credentials
-   - Ensure proper HTTPS in production
-
-3. **AI API Errors**:
-   - Verify API keys are correct
-   - Check API rate limits
-   - Monitor API responses in logs
-
-4. **Call Processing Issues**:
-   - Check Ultravox API key and quotas
-   - Verify network connectivity
-   - Review error logs
-
-### Debug Mode
-
-Run with debug logging:
+For local development with ngrok:
 ```bash
-export PYTHONPATH=. && python -u main.py
+# In a separate terminal
+ngrok http 8000
+
+# Use the ngrok URL for Twilio webhook:
+# https://xxxxx.ngrok.io/api/incoming
 ```
 
-## Security Considerations
+## 📞 How It Works
 
-- Use HTTPS in production
-- Secure API keys and database credentials
-- Implement proper authentication for sensitive endpoints
-- Regular security updates
+1. **Incoming Call**: Twilio receives call and sends webhook to `/api/incoming`
+2. **AI Greeting**: Ultravox AI greets caller and presents department options
+3. **Department Selection**: Caller chooses from 6 departments or voicemail
+4. **Information Collection**: AI systematically collects:
+   - Full name
+   - Phone number
+   - Email address
+   - Organization/company
+   - Purpose of call
+5. **Data Storage**: All information saved to `Progress.csv`
+6. **SMS Follow-up**: Automatic SMS sent with Faith Agency website link
+7. **Call Completion**: 24-hour follow-up promise given to caller
 
-## Support
+## 🏢 Department Options
 
-- Check application logs for detailed error information
-- Verify all environment variables are properly configured
-- Ensure all required services are running and accessible
+1. **VIVA** - Spanish Audio Bible team
+2. **Casting** - Talent and casting department  
+3. **Press** - Media relations and press inquiries
+4. **Tech Support** - App and technology support
+5. **Sales** - Partnerships and sales
+6. **Management** - Executive team access
+7. **Voicemail** - General message system
 
-## Architecture Notes
+## 📊 Data Collection
 
-This system is designed to be:
-- **Standalone**: No dependencies on external codebases
-- **Scalable**: Can handle multiple concurrent calls
-- **Extensible**: Easy to add new features and integrations
-- **Maintainable**: Clean code structure with separation of concerns
+All call data is automatically saved to `Progress.csv` with the following fields:
+
+- `timestamp` - Call completion time
+- `callSid` - Twilio call identifier
+- `departmentCode` - Selected department
+- `departmentName` - Full department name
+- `callerPhone` - Caller's phone number
+- `name` - Collected name
+- `phone` - Collected phone number
+- `email` - Collected email address
+- `organization` - Company/organization
+- `summary` - Purpose of call
+
+## 🛠️ Development
+
+### Adding New Features
+
+- **New departments**: Update `get_single_flow_prompt()` in `functions.py`
+- **SMS templates**: Modify `sms_sending()` function
+- **Data fields**: Update CSV fieldnames and extraction prompts
+
+### Monitoring
+
+Check console output for:
+- Call status updates
+- AI extraction results
+- SMS sending confirmations
+- Error messages and debugging info
+
+## 📋 Dependencies
+
+Key packages (see `requirements.txt` for complete list):
+
+- `fastapi` - Web framework
+- `uvicorn` - ASGI server
+- `twilio` - Twilio API integration
+- `openai` - OpenAI API client
+- `httpx` - HTTP client for Ultravox API
+- `python-dotenv` - Environment variable management
+
+## 🚨 Troubleshooting
+
+- **SMS not sending**: Check Twilio credentials and phone number format
+- **AI not responding**: Verify Ultravox API key and network connectivity
+- **Data extraction failing**: Check OpenAI API key and quota
+- **Webhook errors**: Ensure ngrok tunnel is active for local development
+
+## 📄 License
+
+This project is proprietary to Faith Agency.
