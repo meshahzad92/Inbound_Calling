@@ -1,12 +1,17 @@
 import os
 import csv
 import json
+import time
 import httpx
 import asyncio
 from datetime import datetime
 from openai import OpenAI
 from dotenv import load_dotenv
 from twilio_sms import send_sms
+from email_automation import send_faith_agency_email
+from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
+from google_sheet import save_to_google_sheets
 
 load_dotenv()
 
@@ -15,9 +20,228 @@ ULTRAVOX_API_KEY = os.getenv("ULTRAVOX_API_KEY")
 ULTRAVOX_API_URL = 'https://api.ultravox.ai/api/calls'
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
+MANAGEMENT_REDIRECT_NUMBER = os.getenv("MANAGEMENT_REDIRECT_NUMBER")
 
-# Initialize OpenAI client
+# Initialize OpenAI and Twilio clients
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
+twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
+
+async def handle_transfer_background(call_sid, destination_number, transfer_reason):
+    """Handle transfer in background without blocking Ultravox response"""
+    try:
+        print(f"🔄 Background transfer started: {transfer_reason}")
+        result = await handle_transfer(call_sid, destination_number)
+        print(f"📊 Background transfer result: {result}")
+        return result
+    except Exception as e:
+        print(f"❌ Background transfer error: {e}")
+        return {"status": "failed", "message": f"Background transfer error: {str(e)}"}
+
+async def quick_transfer_check(call_sid, destination_number):
+    """Quick transfer check with shorter timeout for Ultravox responsiveness"""
+    try:
+        print(f"⚡ Quick transfer check to {destination_number}...")
+        
+        # Create a test call to management with shorter timeout
+        management_call = twilio_client.calls.create(
+            to=destination_number,
+            from_=os.getenv("TWILIO_PHONE_NUMBER"),
+            timeout=10,  # Shorter timeout for quick check
+            url="http://demo.twilio.com/docs/voice.xml"
+        )
+        
+        management_call_sid = management_call.sid
+        print(f"📞 Quick test call created: {management_call_sid}")
+        
+        # Quick monitoring - check every 2 seconds for 10 seconds
+        for check in range(1, 6):  # 5 checks total (2s, 4s, 6s, 8s, 10s)
+            await asyncio.sleep(2)
+            call = twilio_client.calls(management_call_sid).fetch()
+            call_status = call.status
+            elapsed = check * 2
+            
+            print(f"⚡ Quick check {check}/5 ({elapsed}s): {call_status}")
+            
+            if call_status == "in-progress":
+                print(f"✅ Management answered - bridging calls directly")
+                
+                # Management already answered our test call, so we need to bridge
+                # the customer call with the existing management call
+                try:
+                    # Create a conference room to bridge the calls
+                    conference_name = f"transfer-{call_sid[-8:]}"
+                    
+                    # First, put the customer call into the conference
+                    customer_twiml = f'''
+                    <Response>
+                        <Say>One moment please, connecting you now.</Say>
+                        <Dial>
+                            <Conference waitUrl="" startConferenceOnEnter="true" endConferenceOnExit="true">
+                                {conference_name}
+                            </Conference>
+                        </Dial>
+                    </Response>
+                    '''
+                    
+                    # Then, redirect the management call (which is already answered) to the same conference
+                    management_twiml = f'''
+                    <Response>
+                        <Dial>
+                            <Conference waitUrl="" startConferenceOnEnter="true" endConferenceOnExit="false">
+                                {conference_name}
+                            </Conference>
+                        </Dial>
+                    </Response>
+                    '''
+                    
+                    # Update both calls to join the conference
+                    print(f"🔗 Bridging customer call {call_sid} to conference {conference_name}")
+                    twilio_client.calls(call_sid).update(twiml=customer_twiml)
+                    
+                    print(f"🔗 Bridging management call {management_call_sid} to conference {conference_name}")
+                    twilio_client.calls(management_call_sid).update(twiml=management_twiml)
+                    
+                    print(f"✅ Both calls bridged in conference: {conference_name}")
+                    return {"status": "success", "message": "Connecting you to management now"}
+                    
+                except Exception as bridge_error:
+                    print(f"❌ Bridge error: {bridge_error}")
+                    # If bridge fails, hang up management call and return failure
+                    try:
+                        twilio_client.calls(management_call_sid).update(status='completed')
+                    except:
+                        pass
+                    return {"status": "failed", "message": "Transfer failed - technical error"}
+            
+            elif call_status in ["busy", "no-answer", "failed", "canceled", "completed"]:
+                print(f"❌ Management not available: {call_status}")
+                break
+        
+        # Clean up test call
+        try:
+            twilio_client.calls(management_call_sid).update(status='completed')
+        except:
+            pass
+        
+        return {"status": "failed", "message": "Management is currently unavailable"}
+        
+    except Exception as e:
+        print(f"❌ Quick transfer error: {e}")
+        return {"status": "failed", "message": f"Transfer error: {str(e)}"}
+
+async def handle_transfer(call_sid, destination_number=None):
+    """Handle call transfer with failover logic and answer detection"""
+    if not destination_number:
+        destination_number = MANAGEMENT_REDIRECT_NUMBER
+    
+    try:
+        print(f"🔄 Initiating transfer to {destination_number}...")
+        print("⏰ Management has 20 seconds to answer...")
+        
+        # Create a separate outbound call to management without affecting the customer call
+        # This way the customer call stays with Ultravox until we confirm management answers
+        management_call = twilio_client.calls.create(
+            to=destination_number,
+            from_=os.getenv("TWILIO_PHONE_NUMBER"),
+            timeout=20,  # Ring for 20 seconds  
+            url="http://demo.twilio.com/docs/voice.xml"  # Simple holding pattern
+        )
+        
+        management_call_sid = management_call.sid
+        print(f"📞 Created management call: {management_call_sid}")
+        print(f"📞 Customer call {call_sid} remains with Ultravox during monitoring...")
+        
+        # Monitor the management call status every 5 seconds for 20 seconds total
+        call_status = await monitor_transfer_status(management_call_sid, destination_number)
+        
+        if call_status == "answered":
+            print(f"✅ Management answered - now transferring customer call...")
+            # Only now do we transfer the customer to management
+            connect_twiml = f'''
+            <Response>
+                <Dial timeout="60">
+                    {destination_number}
+                </Dial>
+            </Response>
+            '''
+            twilio_client.calls(call_sid).update(twiml=connect_twiml)
+            # End the test call to management since we're making a real connection
+            try:
+                twilio_client.calls(management_call_sid).update(status='completed')
+            except:
+                pass
+            return {"status": "success", "message": "Transfer successful - management answered"}
+        else:
+            print(f"❌ Management didn't answer - customer stays with Ultravox")
+            # Clean up the management call
+            try:
+                twilio_client.calls(management_call_sid).update(status='completed')
+            except:
+                pass
+            # Customer call continues with Ultravox (no changes made to it)
+            return {"status": "failed", "message": f"Management not available - continuing with assistant"}
+
+    except TwilioRestException as e:
+        print(f"❌ Transfer failed: {e}")
+        return {"status": "failed", "message": f"Transfer failed: {str(e)}"}
+    except Exception as e:
+        print(f"❌ Unexpected transfer error: {e}")
+        return {"status": "failed", "message": f"Unexpected error: {str(e)}"}
+
+async def monitor_transfer_status(call_sid, destination_number):
+    """Monitor transfer status every 5 seconds for 20 seconds total"""
+    try:
+        total_monitoring_time = 20  # Total time to monitor in seconds
+        check_interval = 5  # Check every 5 seconds
+        checks_performed = 0
+        max_checks = total_monitoring_time // check_interval  # 4 checks total
+        
+        print(f"🔍 Starting transfer monitoring - will check every {check_interval}s for {total_monitoring_time}s")
+        
+        for check_number in range(1, max_checks + 1):
+            # Wait for the interval
+            await asyncio.sleep(check_interval)
+            checks_performed += 1
+            
+            # Get current call status
+            call = twilio_client.calls(call_sid).fetch()
+            call_status = call.status
+            elapsed_time = check_number * check_interval
+            
+            print(f"📊 Check {check_number}/{max_checks} ({elapsed_time}s): Call status = {call_status}")
+            
+            # If call is in-progress, management has answered
+            if call_status == "in-progress":
+                print(f"✅ Management answered after {elapsed_time} seconds")
+                return "answered"
+            
+            # If call ended (busy, no-answer, failed, canceled, completed)
+            elif call_status in ["busy", "no-answer", "failed", "canceled", "completed"]:
+                print(f"❌ Transfer failed - call ended with status: {call_status}")
+                return call_status
+            
+            # If still ringing, continue monitoring (unless this was the last check)
+            elif call_status == "ringing":
+                if check_number < max_checks:
+                    print(f"📞 Still ringing... continuing to monitor")
+                else:
+                    print(f"⏰ Timeout reached - management did not answer within {total_monitoring_time} seconds")
+                    return "no-answer"
+            
+            # Handle any other unexpected statuses
+            else:
+                print(f"⚠️ Unexpected call status: {call_status}")
+                if check_number == max_checks:
+                    return call_status
+        
+        # If we've completed all checks and never got "in-progress", consider it failed
+        print(f"⏰ Monitoring complete - management did not answer within {total_monitoring_time} seconds")
+        return "no-answer"
+        
+    except Exception as e:
+        print(f"❌ Error monitoring transfer status: {e}")
+        return "unknown"
+
 
 def sms_sending(to_number, from_number):
     """
@@ -46,6 +270,30 @@ www.vivabiblia.com"""
         return None
 
 
+def email_sending(to_email, contact_name=""):
+    """
+    Send Faith Agency welcome email
+    
+    Args:
+        to_email (str): The recipient's email address
+        contact_name (str): The contact's name for personalization
+        
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        result = send_faith_agency_email(to_email, contact_name)
+        if result:
+            print(f"✅ Faith Agency email sent successfully to {to_email}")
+            return True
+        else:
+            print(f"❌ Failed to send email to {to_email}")
+            return False
+    except Exception as e:
+        print(f"❌ Error in email_sending: {e}")
+        return False
+
+
 
 def get_single_flow_prompt(call_sid=""):
     return f"""
@@ -66,15 +314,15 @@ PRIMARY GOAL
 - Offer SMS links where relevant (no email).
 
 OPENING (ALWAYS FIRST)
-“Thank you for calling Faith Agency, where faith, creativity, and technology come together. 
-
-Please say which department you’d like: 
-1 for VIVA, 
-2 for Casting, 
-3 for Press, 
-4 for Tech Support, 
-5 for Sales, 
-or 6 for Management. 
+“Thank you for calling Faith Agency — where faith, creativity, and technology come together. 
+To help direct your call, you can say: 
+‘Sales and Partnerships,’ 
+‘VIVA Audio Bible,’ 
+‘Casting and Talent,’ 
+‘Press and Media,’ or 
+‘Technical Support.’ 
+To reach a management team member, just say their name. 
+How may I assist you today?”
 
 
 OPTION RECOGNITION (EXAMPLES, NOT EXHAUSTIVE)
@@ -127,12 +375,35 @@ TRANSFER LOGIC (IF YOUR BACKEND SIGNALS ‘AVAILABLE’)
 - Offer: “Would you like me to connect you now?”
 - If no answer/busy: “They’re unavailable. I’ll take your details.”
 
-PROGRESSIVE CAPTURE (ONE QUESTION PER TURN, WITH BRIEF CONFIRMATIONS) *Compulsory Information* Must ask all the below points.
-1) “What’s your full name?” → “Thanks, [name].”
-2) “What’s the best phone number?” → “Got it, [digits].”
-3) “What’s your email address?” → “Perfect, [email].”
-4) “Kindly, explain the purpose of your call?” → “[Short paraphrase].”
-5) (If relevant) “What’s your organization or company?” → “Thanks.”
+PROGRESSIVE CAPTURE (ONE QUESTION PER TURN, WITH BRIEF CONFIRMATIONS) 
+*Compulsory Information* — Must ask all the points below in order.
+
+1) “What’s your full name?”  
+   → Confirm: “Thanks, I heard [name]. Did I get that right?”  
+   → Speak name slowly and clearly. If unclear, politely re-ask.
+
+2) “What’s the best phone number?”  
+   → Confirm: “Got it, your number is [digits], correct?”  
+   → Speak digits **slowly, one by one**. Example: “9… 2… 3…”
+
+3) “What’s your email address?”  
+   → Confirm: “Thanks. Let me spell it back slowly to confirm.”  
+   → Read the email **character by character** (letters, numbers, dot, at).  
+   Example: “m as in mike, s, h, a, h, z, a, d, w, a, r, i, s, at, g, m, a, i, l, dot, com.”  
+   → Ask: “Did I spell that correctly?”
+
+4) “Could you please repeat your email address once more, just to confirm?”  
+   → Again, spell it back slowly.  
+   - If both match: say “Perfect, your email is confirmed.”  
+   - If mismatch: say “Hmm, I noticed it’s different. Let’s try again carefully.”  
+     Repeat until both match.
+
+5) “Kindly, explain the purpose of your call?”  
+   → Summarize back: “So you’re calling about [short paraphrase]. Did I get that right?”
+
+6) (If relevant) “What’s your organization or company?”  
+   → Confirm slowly: “Thanks, I recorded [organization].”
+
 
 LINK/OFFER (SMS ONLY)
 - VIVA/Press: “Want me to text you the info link?”
@@ -143,9 +414,22 @@ FAIL-SAFES
 - If unclear: “Could you clarify in a few words?”
 - If caller asks voicemail/‘0’: collect name, phone, purpose; end politely.
 
+TRANSFER RULE
+- If caller asks for management or redirection:
+   1) Say: “Sure, I’ll connect you to our management team now.”
+   2) Use the transferCall tool with:
+       destinationNumber = MANAGEMENT_REDIRECT_NUMBER (from .env)
+       transferReason = “Caller requested management redirection”
+   3) If transfer succeeds (management answers):
+        - End AI participation immediately.
+   4) If transfer fails (no answer, busy, voicemail, reject):
+        - Resume speaking to caller.
+        - Say: “The management member is busy right now. They will get back to you within 24 hours.”
+        - Continue with progressive capture to collect name, phone, email, purpose, org.
+
+
 CLOSING (ALWAYS)
 “Thanks. We’ll get back to you within 24 hours. Goodbye.”
-
 
 """
 
@@ -180,7 +464,7 @@ def format_chat(json_data):
 def save_contact_to_csv(contact_data):
     """Save contact information to Progress.csv"""
     csv_file = "Progress.csv"
-    fieldnames = ["timestamp", "callSid", "departmentCode", "departmentName", "callerPhone", "name", "phone", "email", "organization", "summary"]
+    fieldnames = ["timestamp", "callSid", "departmentCode", "departmentName", "callerPhone", "name", "phone", "email", "organization"]
     
     # Check if file exists to determine if we need to write headers
     file_exists = os.path.exists(csv_file)
@@ -227,14 +511,23 @@ async def extract_contact_from_transcript(transcript):
     """Extract contact information from transcript using OpenAI"""
     try:
         prompt = f"""
-Extract contact information from this phone call transcript. Return ONLY a JSON object with these exact fields:
+Extract and CORRECT contact information from this phone call transcript. Return ONLY a JSON object with these exact fields:
 
 - name: caller's full name (empty string if not found)
 - phone: phone number (empty string if not found) 
-- email: email address (empty string if not found)
+- email: email address (empty string if not found) - IMPORTANT: Fix common email errors:
+  * Remove extra words like "the", "rate", "there" from domain names
+  * Fix obvious transcription errors (e.g., "theratelhr.nu.edu.pk" → "lhr.nu.edu.pk")
+  * Correct common domain mistakes (e.g., "gmail.com" not "g mail dot com")
+  * Fix obvious typos in common domains (.com, .org, .edu, .pk, etc.)
 - organization: company/organization name (empty string if not found)
-- summary: brief reason for calling (empty string if not found)
 - department: what department the caller chose. Look for what they said like "viva", "casting", "press", "support", "sales", "management", "voicemail" or "option 1", "option 2", etc. If they said "option 1" or mentioned VIVA, return "viva". If they said "option 2" or mentioned casting, return "casting". If they said "option 3" or mentioned press, return "press". If they said "option 4" or mentioned support, return "support". If they said "option 5" or mentioned sales, return "sales". If they said "option 6" or mentioned management, return "management". If unclear, return "voicemail".
+
+CORRECTION GUIDELINES:
+- Email domains: Remove filler words that don't belong (the, rate, there, etc.)
+- Phone numbers: Format consistently with proper spacing/dashes
+- Names: Capitalize properly and fix obvious transcription errors
+- Organizations: Correct obvious misspellings of well-known companies/universities
 
 Transcript:
 {transcript}
@@ -265,7 +558,6 @@ Return only the JSON object, no other text.
             "phone": "",
             "email": "",
             "organization": "",
-            "summary": "",
             "department": "voicemail"
         }
 
@@ -333,6 +625,14 @@ async def monitor_single_flow_call(call_id, caller_phone, call_sid):
             # Save to CSV
             save_contact_to_csv(csv_data)
             
+            # Save to Google Sheets
+            print(f"\n=== SAVING TO GOOGLE SHEETS ===")
+            sheets_success = save_to_google_sheets(csv_data)
+            if sheets_success:
+                print(f"✅ Data saved to Google Sheets - {csv_data['departmentName']} worksheet")
+            else:
+                print(f"❌ Failed to save to Google Sheets")
+            
             # Send SMS after saving to CSV using caller_phone from incoming API
             print(f"\n=== SENDING SMS TO CALLER ===")
             print(f"Using caller phone: {caller_phone}")
@@ -342,13 +642,25 @@ async def monitor_single_flow_call(call_id, caller_phone, call_sid):
             else:
                 print(f"❌ Failed to send SMS to {caller_phone}")
             
+            # Send email if email address is available
+            if contact_info.get("email"):
+                print(f"\n=== SENDING EMAIL TO CALLER ===")
+                print(f"Using email: {contact_info.get('email')}")
+                email_result = email_sending(contact_info.get("email"), contact_info.get("name", ""))
+                if email_result:
+                    print(f"✅ Email sent successfully to {contact_info.get('email')}")
+                else:
+                    print(f"❌ Failed to send email to {contact_info.get('email')}")
+            else:
+                print("\n=== NO EMAIL ADDRESS AVAILABLE ===")
+                print("Skipping email sending - no email provided by caller")
+            
             print(f"\n=== SAVED TO PROGRESS.CSV ===")
             print(f"Department: {csv_data['departmentName']}")
             print(f"Name: {csv_data['name']}")
             print(f"Phone: {csv_data['phone']}")
             print(f"Email: {csv_data['email']}")
             print(f"Organization: {csv_data['organization']}")
-            print(f"Summary: {csv_data['summary']}")
             print("=" * 50)
         else:
             print("No contact information found in transcript")
