@@ -57,6 +57,11 @@ logs/
 
 # CSV Files (optional - uncomment if you don't want to track Progress.csv)
 # Progress.csv
+awsaccessingcommands.txt
+# Docker
+.docker/
+docker-compose.override.yml
+*.log
 
 # Temporary files
 *.tmp

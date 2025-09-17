@@ -1,41 +1,44 @@
+# Use Python 3.12 slim image for smaller size
 FROM python:3.12-slim
 
-# Set working directory
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+# Set work directory
 WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
+    g++ \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
+# Copy requirements first for better Docker layer caching
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Create virtual environment and install dependencies
+RUN python3.12 -m venv venv && \
+    . venv/bin/activate && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY main.py .
-COPY functions.py .
-COPY twilio_sms.py .
-COPY .env .
+# Copy the entire application
+COPY . .
 
-# Create directory for CSV data storage
-RUN mkdir -p /app/data
+# Create necessary directories for credentials and data
+RUN mkdir -p /app/email_automation /app/sheets_automation /app/data
 
-# Expose port
+# Set permissions for the venv
+RUN chmod +x venv/bin/activate
+
+# Expose the port the app runs on
 EXPOSE 8000
 
-# Set environment variables
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
-ENV HOST=0.0.0.0
-ENV PORT=8000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+# Health check to ensure the app is running
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Run the application using uvicorn for production
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Command to run the application with virtual environment activated
+CMD ["/bin/bash", "-c", "source venv/bin/activate && python main.py"]
