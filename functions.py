@@ -15,6 +15,20 @@ from google_sheet import save_to_google_sheets
 
 load_dotenv()
 
+# Global variable to store transfer status
+transfer_status_cache = {}
+
+def store_transfer_status(call_sid, status):
+    """Store transfer status for a call SID"""
+    transfer_status_cache[call_sid] = status
+    print(f"📝 Stored transfer status for {call_sid}: {status}")
+
+def get_transfer_status(call_sid):
+    """Get transfer status for a given call SID"""
+    status = transfer_status_cache.get(call_sid, None)
+    print(f"🔍 Retrieved transfer status for {call_sid}: {status}")
+    return status
+
 # Configuration
 ULTRAVOX_API_KEY = os.getenv("ULTRAVOX_API_KEY")
 ULTRAVOX_API_URL = 'https://api.ultravox.ai/api/calls'
@@ -464,7 +478,7 @@ def format_chat(json_data):
 def save_contact_to_csv(contact_data):
     """Save contact information to Progress.csv"""
     csv_file = "Progress.csv"
-    fieldnames = ["timestamp", "callSid", "departmentCode", "departmentName", "callerPhone", "name", "phone", "email", "organization"]
+    fieldnames = ["timestamp", "callSid", "departmentCode", "departmentName", "callerPhone", "name", "phone", "email", "organization", "status"]
     
     # Check if file exists to determine if we need to write headers
     file_exists = os.path.exists(csv_file)
@@ -607,6 +621,17 @@ async def monitor_single_flow_call(call_id, caller_phone, call_sid):
         contact_info = await extract_contact_from_transcript(transcript)
         
         if contact_info:
+            # Check if there was a transfer attempt and its result
+            transfer_result = get_transfer_status(call_sid)
+            
+            # Determine status based on transfer result
+            if transfer_result == "success":
+                status = "Answered"
+            else:
+                status = "Not answered"
+            
+            print(f"📊 Transfer status for {call_sid}: {transfer_result} → Status: {status}")
+            
             # Prepare data for CSV
             department_word = contact_info.get("department", "voicemail")
             csv_data = {
@@ -619,7 +644,7 @@ async def monitor_single_flow_call(call_id, caller_phone, call_sid):
                 "phone": contact_info.get("phone", ""),
                 "email": contact_info.get("email", ""),
                 "organization": contact_info.get("organization", ""),
-                "summary": contact_info.get("summary", "")
+                "status": status  # Add status field
             }
             
             # Save to CSV
@@ -661,6 +686,7 @@ async def monitor_single_flow_call(call_id, caller_phone, call_sid):
             print(f"Phone: {csv_data['phone']}")
             print(f"Email: {csv_data['email']}")
             print(f"Organization: {csv_data['organization']}")
+            print(f"Status: {csv_data['status']}")
             print("=" * 50)
         else:
             print("No contact information found in transcript")

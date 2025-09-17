@@ -10,6 +10,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from dotenv import load_dotenv
 
 class SimpleSheetReader:
     def __init__(self, credentials_file="credentials.json", token_file="token.json"):
@@ -149,8 +150,8 @@ class SimpleSheetReader:
             
             print(f"📊 Setting up columns in sheet: {sheet_id}")
             
-            # Standard column headers for Faith Agency data
-            headers = ["timestamp", "callerPhone", "name", "phone", "email", "organization"]
+            # Standard column headers for Faith Agency data (including Status)
+            headers = ["timestamp", "callerPhone", "name", "phone", "email", "organization", "Status"]
             
             # Get sheet metadata to find all worksheets
             sheet_metadata = self.service.spreadsheets().get(spreadsheetId=sheet_id).execute()
@@ -166,25 +167,35 @@ class SimpleSheetReader:
                 # Check if worksheet already has headers
                 result = self.service.spreadsheets().values().get(
                     spreadsheetId=sheet_id,
-                    range=f"{worksheet_name}!A1:F1"
+                    range=f"{worksheet_name}!A1:G1"
                 ).execute()
                 
                 existing_data = result.get('values', [])
                 
                 if existing_data and existing_data[0]:
-                    print(f"    ⚠️ '{worksheet_name}' already has data in row 1:")
-                    print(f"      {existing_data[0]}")
+                    existing_headers = existing_data[0]
+                    print(f"    ⚠️ '{worksheet_name}' already has headers:")
+                    print(f"      {existing_headers}")
                     
-                    # Ask if user wants to overwrite
-                    overwrite = input(f"    ❓ Overwrite headers in '{worksheet_name}'? (y/n): ").lower().strip()
-                    if overwrite != 'y':
+                    # Check if we need to add Status column
+                    if "Status" not in existing_headers:
+                        print(f"    🔧 Missing 'Status' column, will add it")
+                        overwrite = True
+                    else:
+                        # Ask if user wants to overwrite
+                        overwrite = input(f"    ❓ Overwrite headers in '{worksheet_name}'? (y/n): ").lower().strip()
+                        overwrite = (overwrite == 'y')
+                    
+                    if not overwrite:
                         print(f"    ⏭️ Skipping '{worksheet_name}'")
                         continue
+                else:
+                    print(f"    📝 No existing headers found, adding new ones")
                 
                 # Write headers to the worksheet
                 self.service.spreadsheets().values().update(
                     spreadsheetId=sheet_id,
-                    range=f"{worksheet_name}!A1:F1",
+                    range=f"{worksheet_name}!A1:G1",
                     valueInputOption='RAW',
                     body={'values': [headers]}
                 ).execute()
@@ -203,6 +214,13 @@ def main():
     print("📊 Google Sheets Manager for Faith Agency")
     print("=" * 50)
     
+    # Load environment variables from parent directory
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+    load_dotenv(env_path)
+    
+    # Get SheetID from environment
+    sheet_id_from_env = os.getenv('SheetID')
+    
     # Check for credentials
     if not os.path.exists("credentials.json"):
         print("❌ Missing credentials.json file")
@@ -216,8 +234,17 @@ def main():
         print("7. Rename to 'credentials.json'")
         return
     
-    # Get sheet URL/ID from user
-    sheet_input = input("\nEnter Google Sheet URL or ID: ").strip()
+    # Get sheet URL/ID from user or use environment
+    if sheet_id_from_env:
+        print(f"\n📄 Found SheetID in .env file: {sheet_id_from_env}")
+        use_env = input("Use this Sheet ID? (y/n, default: y): ").strip().lower()
+        
+        if use_env in ['', 'y', 'yes']:
+            sheet_input = sheet_id_from_env
+        else:
+            sheet_input = input("Enter Google Sheet URL or ID: ").strip()
+    else:
+        sheet_input = input("\nEnter Google Sheet URL or ID: ").strip()
     
     if not sheet_input:
         print("❌ No sheet provided")
@@ -254,7 +281,7 @@ def main():
         print("📝 SETTING UP COLUMNS")
         print("="*50)
         print("This will add these columns to all worksheets:")
-        print("📋 timestamp, callerPhone, name, phone, email, organization")
+        print("📋 timestamp, callerPhone, name, phone, email, organization, Status")
         
         confirm = input("\n❓ Continue with column setup? (y/n): ").lower().strip()
         

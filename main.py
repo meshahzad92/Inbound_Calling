@@ -15,8 +15,8 @@ from functions import (
 
 load_dotenv()
 
-# Global mapping to store Ultravox Call ID → Twilio Call SID
-call_mapping = {}
+# Global dictionary to track active calls
+call_mapping = {}  # Maps Ultravox call ID to Twilio Call SID
 
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = os.getenv("PORT", "8000")
@@ -142,6 +142,10 @@ async def transfer_call(request: Request):
         
         # Quick transfer check - test management availability first
         result = await quick_transfer_check(real_call_sid, destination_number)
+        
+        # Store transfer result for later use in monitoring
+        from functions import store_transfer_status
+        store_transfer_status(real_call_sid, result.get("status", "failed"))
         
         print(f"🔄 Transfer request: {transfer_reason}")
         print(f"📞 Using real Call SID: {real_call_sid}")

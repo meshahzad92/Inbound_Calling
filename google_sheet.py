@@ -89,18 +89,19 @@ class GoogleSheetManager:
             
             print(f"📊 Saving to worksheet: {worksheet_name}")
             
-            # Prepare data row - match the column order
+            # Prepare data row - match the column order including Status
             row_data = [
                 call_data.get("timestamp", ""),
                 call_data.get("callerPhone", ""),
                 call_data.get("name", ""),
                 call_data.get("phone", ""),
                 call_data.get("email", ""),
-                call_data.get("organization", "")
+                call_data.get("organization", ""),
+                call_data.get("status", "Not answered")  # Default to "Not answered"
             ]
             
             # Append data to the worksheet
-            range_name = f"{worksheet_name}!A:F"
+            range_name = f"{worksheet_name}!A:G"
             
             body = {
                 'values': [row_data]
@@ -158,7 +159,8 @@ def test_google_sheets():
         "name": "Test User",
         "phone": "+1234567890",
         "email": "test@example.com",
-        "organization": "Test Organization"
+        "organization": "Test Organization",
+        "status": "Not answered"
     }
     
     success = save_to_google_sheets(test_data)
