@@ -2,43 +2,7 @@ version: '3.8'
 
 services:
   faith-agency-ai:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: faith-agency-calling-system
+    build: .
     ports:
       - "8000:8000"
-    environment:
-      - HOST=0.0.0.0
-      - PORT=8000
-    volumes:
-      # Mount directories for persistent data and credentials
-      - ./Progress.csv:/app/Progress.csv
-      - ./email_automation:/app/email_automation
-      - ./sheets_automation:/app/sheets_automation
-      - ./.env:/app/.env
-      # Optional: Mount credentials if they exist
-      - ./credentials.json:/app/credentials.json:ro
     restart: unless-stopped
-    networks:
-      - faith-agency-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-networks:
-  faith-agency-network:
-    driver: bridge
-
-# Optional: Add volumes for persistent data
-volumes:
-  faith-agency-data:
-    driver: local
