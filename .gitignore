@@ -21,7 +21,9 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
+email_automation/token.json
+email_automation/credentials.json
+credentials.json
 # Virtual Environment
 venv/
 env/
