@@ -57,27 +57,31 @@ async def quick_transfer_check(call_sid, destination_number):
         print(f"⚡ Quick transfer check to {destination_number}...")
         
         # Create a test call to management with shorter timeout
+        # Create management call
         management_call = twilio_client.calls.create(
-            to=destination_number,
+            to=MANAGEMENT_REDIRECT_NUMBER,
             from_=os.getenv("TWILIO_PHONE_NUMBER"),
-            timeout=10,  # Shorter timeout for quick check
-            url="http://demo.twilio.com/docs/voice.xml"
+            timeout=25,  # Give management 25 seconds to answer
+            url="http://demo.twilio.com/docs/voice.xml"  # Simple holding pattern
         )
         
         management_call_sid = management_call.sid
-        print(f"📞 Quick test call created: {management_call_sid}")
+        print(f"📞 Created management call: {management_call_sid}")
         
-        # Quick monitoring - check every 2 seconds for 10 seconds
-        for check in range(1, 6):  # 5 checks total (2s, 4s, 6s, 8s, 10s)
-            await asyncio.sleep(2)
-            call = twilio_client.calls(management_call_sid).fetch()
-            call_status = call.status
-            elapsed = check * 2
+        # Wait and check management call status
+        max_wait_time = 20  # Wait up to 20 seconds minimum
+        check_interval = 4  # Check every 4 seconds
+        checks = max_wait_time // check_interval  # 5 checks total (at 4s, 8s, 12s, 16s, 20s)
+        
+        for i in range(checks):
+            print(f"⏰ Checking management call status (attempt {i+1}/{checks})...")
+            time.sleep(check_interval)
             
-            print(f"⚡ Quick check {check}/5 ({elapsed}s): {call_status}")
+            # Get current call status
+            call_status = twilio_client.calls(management_call_sid).fetch().status
+            print(f"📊 Management call status: {call_status}")
             
             if call_status == "in-progress":
-                print(f"✅ Management answered - bridging calls directly")
                 
                 # Management already answered our test call, so we need to bridge
                 # the customer call with the existing management call
