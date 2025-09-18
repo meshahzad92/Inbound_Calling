@@ -36,15 +36,19 @@ app.add_middleware(
 
 
 ULTRAVOX_CALL_CONFIG = {
-    'model': 'fixie-ai/ultravox',
-    'voice': 'Mark',
-    'temperature': 0.3,
-    'firstSpeakerSettings': { 'agent': {} },
-    'medium': {"twilio": {}},
-    'selectedTools': [
-        { 'toolName': 'transferCall' }   # Reference your dashboard tool by name
+    "model": "fixie-ai/ultravox",
+    "voice": "Mark",
+    "temperature": 0.3,
+    "firstSpeakerSettings": {"agent": {}},
+    "medium": {"twilio": {}},
+    "selectedTools": [
+        {
+            "toolName": "transferCall",
+            "url": "http://51.20.18.79:8000/api/transfer"  # Reference your dashboard tool by name
+        }
     ]
 }
+
 
 @app.post("/api/incoming", response_class=HTMLResponse)
 async def incoming_call(request: Request):
@@ -166,7 +170,7 @@ async def log_requests(request: Request, call_next):
         print(f"\n{'='*60}")
         print(f"🌐 INCOMING REQUEST TO: {request.url.path}")
         print(f"📍 Method: {request.method}")
-        print(f"📋 Headers: {dict(request.headers)}")
+        print(f"📋 Headers: {dict(request.headersca)}")
         print(f"🔗 Query Params: {dict(request.query_params)}")
         print(f"🌍 Client IP: {request.client.host if request.client else 'Unknown'}")
         
