@@ -439,7 +439,7 @@ MANAGEMENT TRANSFER RULE (SIMPLE APPROACH) - *** CRITICAL ***
       - Organization (if relevant)
    3) After collecting all information, say: "Perfect! I have all your details. Let me connect you to management now."
    4) MANDATORY: Immediately use the transferCall tool with parameters:
-        destinationNumber = "MANAGEMENT_REDIRECT_NUMBER"
+        destinationNumber = {MANAGEMENT_REDIRECT_NUMBER}
         transferReason = "Caller requested management - Info collected: [name], [email], [purpose]"
 
    5):WAIT 10 SECONDS after initiating transfer.
