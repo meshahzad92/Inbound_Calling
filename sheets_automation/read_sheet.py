@@ -151,7 +151,7 @@ class SimpleSheetReader:
             print(f"📊 Setting up columns in sheet: {sheet_id}")
             
             # Standard column headers for Faith Agency data (including Status)
-            headers = ["timestamp", "callerPhone", "name", "phone", "email", "organization", "Status"]
+            headers = ["timestamp", "callerPhone", "name", "email", "organization", "Status"]
             
             # Get sheet metadata to find all worksheets
             sheet_metadata = self.service.spreadsheets().get(spreadsheetId=sheet_id).execute()
@@ -281,7 +281,7 @@ def main():
         print("📝 SETTING UP COLUMNS")
         print("="*50)
         print("This will add these columns to all worksheets:")
-        print("📋 timestamp, callerPhone, name, phone, email, organization, Status")
+        print("📋 timestamp, callerPhone, name, email, organization, Status")
         
         confirm = input("\n❓ Continue with column setup? (y/n): ").lower().strip()
         

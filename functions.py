@@ -400,26 +400,23 @@ PROGRESSIVE CAPTURE (ONE QUESTION PER TURN, WITH BRIEF CONFIRMATIONS)
    → Confirm: “Thanks, I heard [name]. Did I get that right?”  
    → Speak name slowly and clearly. If unclear, politely re-ask.
 
-2) “What’s the best phone number?”  
-   → Confirm: “Got it, your number is [digits], correct?”  
-   → Speak digits **slowly, one by one**. Example: “9… 2… 3…”
 
-3) “What’s your email address?”  
+2) “What’s your email address?”  
    → Confirm: “Thanks. Let me spell it back slowly to confirm.”  
    → Read the email **character by character** (letters, numbers, dot, at).  
    Example: “m as in mike, s, h, a, h, z, a, d, w, a, r, i, s, at, g, m, a, i, l, dot, com.”  
    → Ask: “Did I spell that correctly?”
 
-4) “Could you please repeat your email address once more, just to confirm?”  
+3) “Could you please repeat your email address once more, just to confirm?”  
    → Again, spell it back slowly.  
    - If both match: say “Perfect, your email is confirmed.”  
    - If mismatch: say “Hmm, I noticed it’s different. Let’s try again carefully.”  
      Repeat until both match.
 
-5) “Kindly, explain the purpose of your call?”  
+4) “Kindly, explain the purpose of your call?”  
    → Summarize back: “So you’re calling about [short paraphrase]. Did I get that right?”
 
-6) (If relevant) “What’s your organization or company?”  
+5) (If relevant) “What’s your organization or company?”  
    → Confirm slowly: “Thanks, I recorded [organization].”
 
 
@@ -429,21 +426,24 @@ LINK/OFFER (SMS ONLY)
 - Sales: “I’ll text our team your request summary.”
 
 FAIL-SAFES
-- If unclear: “Could you clarify in a few words?”
-- If caller asks voicemail/‘0’: collect name, phone, purpose; end politely.
+- If unclear: "Could you clarify in a few words?"
+- If caller asks voicemail/'0': collect name, phone, purpose; end politely.
 
-TRANSFER RULE
+MANAGEMENT TRANSFER RULE (SIMPLE APPROACH)
 - If caller asks for management or redirection:
-   1) Say: “Sure, I’ll connect you to our management team now.”
-   2) Use the transferCall tool with:
-       destinationNumber = MANAGEMENT_REDIRECT_NUMBER (from .env)
-       transferReason = “Caller requested management redirection”
-   3) If transfer succeeds (management answers):
-        - End AI participation immediately.
-   4) If transfer fails (no answer, busy, voicemail, reject):
-        - Resume speaking to caller.
-        - Say: “The management member is busy right now. They will get back to you within 24 hours.”
-        - Continue with progressive capture to collect name, phone, email, purpose, org.
+   1) Say: "I'll be happy to connect you to our management team. First, let me get your details."
+   2) Proceed with progressive capture to collect:
+      - Name
+      - Email address (confirm twice)
+      - Purpose of call
+      - Organization (if relevant)
+   3) After collecting all information, say: "Perfect! I have all your details. Let me connect you to management now."
+   4) Use the transferCall tool with:
+      destinationNumber = MANAGEMENT_REDIRECT_NUMBER
+      transferReason = "Caller requested management - Info collected: [name], [email], [purpose]"
+   5) If transfer succeeds: End AI participation
+   6) If transfer fails: Say "I'll make sure management gets your message and calls you back within 24 hours."
+
 
 
 CLOSING (ALWAYS)
@@ -482,7 +482,7 @@ def format_chat(json_data):
 def save_contact_to_csv(contact_data):
     """Save contact information to Progress.csv"""
     csv_file = "Progress.csv"
-    fieldnames = ["timestamp", "callSid", "departmentCode", "departmentName", "callerPhone", "name", "phone", "email", "organization", "status"]
+    fieldnames = ["timestamp", "callSid", "departmentCode", "departmentName", "callerPhone", "name", "email", "organization", "status"]
     
     # Check if file exists to determine if we need to write headers
     file_exists = os.path.exists(csv_file)
@@ -532,7 +532,6 @@ async def extract_contact_from_transcript(transcript):
 Extract and CORRECT contact information from this phone call transcript. Return ONLY a JSON object with these exact fields:
 
 - name: caller's full name (empty string if not found)
-- phone: phone number (empty string if not found) 
 - email: email address (empty string if not found) - IMPORTANT: Fix common email errors:
   * Remove extra words like "the", "rate", "there" from domain names
   * Fix obvious transcription errors (e.g., "theratelhr.nu.edu.pk" → "lhr.nu.edu.pk")
@@ -543,7 +542,6 @@ Extract and CORRECT contact information from this phone call transcript. Return 
 
 CORRECTION GUIDELINES:
 - Email domains: Remove filler words that don't belong (the, rate, there, etc.)
-- Phone numbers: Format consistently with proper spacing/dashes
 - Names: Capitalize properly and fix obvious transcription errors
 - Organizations: Correct obvious misspellings of well-known companies/universities
 
@@ -645,7 +643,6 @@ async def monitor_single_flow_call(call_id, caller_phone, call_sid):
                 "departmentName": get_department_name(department_word),
                 "callerPhone": caller_phone,
                 "name": contact_info.get("name", ""),
-                "phone": contact_info.get("phone", ""),
                 "email": contact_info.get("email", ""),
                 "organization": contact_info.get("organization", ""),
                 "status": status  # Add status field
