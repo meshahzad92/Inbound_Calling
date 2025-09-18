@@ -446,7 +446,7 @@ MANAGEMENT TRANSFER RULE (SIMPLE APPROACH) - *** CRITICAL ***
 
    6):If the call is answered: AI remains silent (end participation).
 
-   7):If transfer fails or times out: Say
+7):If transfer fails or times out: Say
         "I'll make sure management gets your message and calls you back within 24 hours."
 
 *** CRITICAL REMINDER *** 

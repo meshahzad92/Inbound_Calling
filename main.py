@@ -104,6 +104,7 @@ def health_check():
 async def transfer_call(request: Request):
     """Handle transfer requests from Ultravox"""
     try:
+        print("🎯 TRANSFER ENDPOINT HIT! Tool is working!")
         # Import here to avoid circular imports
         from functions import handle_transfer, handle_transfer_background, quick_transfer_check
         import os
