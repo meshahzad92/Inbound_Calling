@@ -159,6 +159,46 @@ async def transfer_call(request: Request):
         print(f"❌ Error in transfer endpoint: {e}")
         return {"status": "failed", "message": f"Transfer endpoint error: {str(e)}"}
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all incoming requests for debugging"""
+    if request.url.path.startswith('/api/'):
+        print(f"\n{'='*60}")
+        print(f"🌐 INCOMING REQUEST TO: {request.url.path}")
+        print(f"📍 Method: {request.method}")
+        print(f"📋 Headers: {dict(request.headers)}")
+        print(f"🔗 Query Params: {dict(request.query_params)}")
+        print(f"🌍 Client IP: {request.client.host if request.client else 'Unknown'}")
+        
+        # Read the body for POST requests
+        if request.method == "POST":
+            try:
+                body = await request.body()
+                print(f"📦 Raw Body: {body}")
+                if body:
+                    import json
+                    try:
+                        parsed_body = json.loads(body)
+                        print(f"📝 Parsed JSON: {parsed_body}")
+                    except json.JSONDecodeError as e:
+                        print(f"❌ JSON Parse Error: {e}")
+                        print(f"📄 Body as text: {body.decode('utf-8', errors='ignore')}")
+                else:
+                    print("📦 Empty body")
+            except Exception as e:
+                print(f"❌ Error reading body: {e}")
+        
+        print(f"{'='*60}\n")
+    
+    response = await call_next(request)
+    
+    # Log response for API calls
+    if request.url.path.startswith('/api/'):
+        print(f"📤 RESPONSE STATUS: {response.status_code}")
+        print(f"📋 RESPONSE HEADERS: {dict(response.headers)}")
+    
+    return response
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host=HOST, port=int(PORT))
