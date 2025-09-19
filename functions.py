@@ -2,13 +2,15 @@ import os
 import csv
 import json
 import time
+import re
 import httpx
 import asyncio
 from datetime import datetime
 from openai import OpenAI
 from dotenv import load_dotenv
 from twilio_sms import send_sms
-from email_automation import send_faith_agency_email
+# from email_automation import send_faith_agency_email  # Commented out - now using SendGrid
+from sendgrid_mailer import send_email  # New SendGrid email system
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 from google_sheet import save_to_google_sheets
@@ -288,24 +290,63 @@ www.vivabiblia.com"""
         return None
 
 
-def email_sending(to_email, contact_name=""):
+def create_faith_agency_email_content(caller_name="", department=""):
     """
-    Send Faith Agency welcome email
+    Create Faith Agency email content template
+    
+    Args:
+        caller_name (str): The caller's name for personalization
+        department (str): The department the inquiry was directed to
+        
+    Returns:
+        tuple: (subject, content) for the email
+    """
+    subject = "Thank you for contacting Faith Agency"
+    
+    # Professional email content matching the original template
+    content = f"""Dear {caller_name or 'Valued Customer'},
+
+Thank you for contacting Faith Agency! We appreciate your interest in our services.
+
+{f'Your inquiry was directed to our {department} department.' if department else 'We have received your inquiry.'}
+
+We will get back to you within 24 hours.
+
+Please visit our website for more information: www.vivabiblia.com
+
+Best regards,
+The Faith Agency Team
+
+---
+Faith Agency - Where faith, creativity, and technology come together."""
+    
+    return subject, content
+
+
+def email_sending(to_email, contact_name="", department=""):
+    """
+    Send Faith Agency welcome email using SendGrid
     
     Args:
         to_email (str): The recipient's email address
         contact_name (str): The contact's name for personalization
+        department (str): The department the inquiry was directed to
         
     Returns:
         bool: True if email sent successfully, False otherwise
     """
     try:
-        result = send_faith_agency_email(to_email, contact_name)
+        # Get email subject and content from template
+        subject, content = create_faith_agency_email_content(caller_name=contact_name, department=department)
+        
+        # Send email using SendGrid
+        result = send_email(to_email, subject, content)
+        
         if result:
-            print(f"✅ Faith Agency email sent successfully to {to_email}")
+            print(f"✅ Faith Agency email sent successfully to {to_email} via SendGrid")
             return True
         else:
-            print(f"❌ Failed to send email to {to_email}")
+            print(f"❌ Failed to send email to {to_email} via SendGrid")
             return False
     except Exception as e:
         print(f"❌ Error in email_sending: {e}")
@@ -331,6 +372,8 @@ PRIMARY GOAL
 - Collect their info step-by-step.
 - Confirm: “We’ll get back to you within 24 hours.”
 - Offer SMS links where relevant (no email).
+
+
 
 LANGUAGE RULE:
 - Always begin by asking: "In which language would you like to continue: English or Spanish?"
@@ -561,57 +604,77 @@ def get_department_name(department_input):
     dept_key = str(department_input).lower().strip()
     return department_map.get(dept_key, "Unknown Department")
 
-async def extract_contact_from_transcript(transcript):
-    """Extract contact information from transcript using OpenAI"""
+async def extract_contact_from_transcript(transcript: str):
+    """
+    Extract final confirmed contact info from transcript.
+    Email is ONLY valid if:
+      - It appears after "Let me spell it back slowly to confirm"
+      - AND the user confirms it (yes/ok/perfect/correct/etc.)
+    """
     try:
         prompt = f"""
-Extract and CORRECT contact information from this phone call transcript. Return ONLY a JSON object with these exact fields:
+You are a strict data extraction assistant. Use only confirmed information.
 
-- name: caller's full name (empty string if not found)
-- email: email address (empty string if not found) - IMPORTANT: Fix common email errors:
-  * Remove extra words like "the", "rate", "there" from domain names
-  * Fix obvious transcription errors (e.g., "theratelhr.nu.edu.pk" → "lhr.nu.edu.pk")
-  * Correct common domain mistakes (e.g., "gmail.com" not "g mail dot com")
-  * Fix obvious typos in common domains (.com, .org, .edu, .pk, etc.)
-- organization: company/organization name (empty string if not found)
-- department: what department the caller chose. Look for what they said like "viva", "casting", "press", "support", "sales", "management", "voicemail" or "option 1", "option 2", etc. If they said "option 1" or mentioned VIVA, return "viva". If they said "option 2" or mentioned casting, return "casting". If they said "option 3" or mentioned press, return "press". If they said "option 4" or mentioned support, return "support". If they said "option 5" or mentioned sales, return "sales". If they said "option 6" or mentioned management, return "management". If unclear, return "voicemail".
+RULES:
+1. NAME → The name the agent repeats AND caller confirms.
+2. EMAIL → Only the version spelled by the agent after the phrase 
+   "Let me spell it back slowly to confirm". 
+   - Accept it ONLY if the caller then confirms (yes, ok, perfect, correcto, etc.).
+   - Convert "at" → "@" and "dot" → "."
+   - Remove spaces/commas.
+   - Ignore all earlier user-provided emails.
+3. DEPARTMENT → The department the user was routed to (viva, casting, press, support, sales, management, voicemail).
+4. ORGANIZATION → Only if explicitly mentioned, else empty.
 
-CORRECTION GUIDELINES:
-- Email domains: Remove filler words that don't belong (the, rate, there, etc.)
-- Names: Capitalize properly and fix obvious transcription errors
-- Organizations: Correct obvious misspellings of well-known companies/universities
+Return JSON only:
+{{
+  "name": "...",
+  "email": "...",
+  "organization": "...",
+  "department": "..."
+}}
 
-Transcript:
+TRANSCRIPT:
 {transcript}
-
-Return only the JSON object, no other text.
 """
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a data extraction assistant. Return only valid JSON."},
+                {"role": "system", "content": "You are a precise data extraction assistant. Extract only confirmed information."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.1
+            temperature=0.0
         )
-        
+
         result = response.choices[0].message.content.strip()
         contact_info = json.loads(result)
-        
-        print(f"✅ OpenAI extracted contact info: {contact_info}")
+
+        # --- Regex safeguard for email after "spell it back" ---
+        match = re.search(
+            r"spell it back.*?:\s*([a-z0-9 ,]+).*?Did I spell that correctly\?.*?User.*?(Yes|Ok|Okay|Perfect|Correct|Right|Sure|Sí|Correcto)",
+            transcript,
+            re.IGNORECASE | re.DOTALL,
+        )
+        if match:
+            spelled = match.group(1)
+            cleaned = spelled.replace(",", " ").replace("  ", " ").strip()
+            cleaned = cleaned.replace(" at ", "@").replace(" dot ", ".").replace(" ", "")
+            contact_info["email"] = cleaned
+
+        print(f"✅ Extracted contact info: {contact_info}")
         return contact_info
-        
+
     except Exception as e:
-        print(f"❌ OpenAI extraction error: {e}")
-        # Return empty contact info if extraction fails
+        print(f"❌ Extraction error: {e}")
         return {
             "name": "",
-            "phone": "",
             "email": "",
             "organization": "",
-            "department": "voicemail"
+            "department": "voicemail",
         }
+    
 
 async def get_call_status(call_id):
     """Poll the Ultravox API for the call status until it ends."""

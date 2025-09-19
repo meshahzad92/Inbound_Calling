@@ -71,8 +71,9 @@ ULTRAVOX_API_KEY=your_ultravox_api_key
 # OpenAI Configuration (for contact data extraction)
 OPENAI_API_KEY=your_openai_api_key
 
-# Gmail Configuration (for email automation)
-FROM_EMAIL=your-email@gmail.com
+# SendGrid Configuration (for email automation)
+SENDGRID_API_KEY=your_sendgrid_api_key
+SENDGRID_VERIFIED_SENDER=your-verified-email@domain.com
 
 # Google Sheets Configuration
 SheetID=your_google_sheet_id
@@ -95,20 +96,20 @@ PERPLEXITY_API_KEY=your_perplexity_api_key
 
 2. **Set up authentication folders**:
    ```bash
-   # Place credentials in both locations for different services
+# Place credentials in both locations for different services
    # Main Google Sheets integration:
    cp downloaded_credentials.json ./credentials.json
    
    # Sheets automation utilities:
    cp downloaded_credentials.json ./sheets_automation/credentials.json
-   ```
+```
 
 3. **First-time Google Sheets authentication**:
    ```bash
-   # Run the sheets automation setup to authenticate and create token
+# Run the sheets automation setup to authenticate and create token
    cd sheets_automation
    python read_sheet.py
-   ```
+```
    - This will open your browser for Google OAuth
    - Allow the application to read and write to your Google Sheets
    - A `token.json` file will be created automatically in `sheets_automation/`
@@ -123,15 +124,15 @@ PERPLEXITY_API_KEY=your_perplexity_api_key
 
 2. **Set up Gmail authentication**:
    ```bash
-   # Place Gmail credentials in email automation folder
+# Place Gmail credentials in email automation folder
    cp downloaded_credentials.json ./email_automation/credentials.json
-   ```
+```
 
 3. **First-time Gmail authentication**:
    ```bash
-   # Run this once to authenticate and generate token.json for Gmail
+# Run this once to authenticate and generate token.json for Gmail
    python -c "from email_automation import authenticate_gmail; authenticate_gmail()"
-   ```
+```
    - This will open your browser for Google OAuth
    - Allow the application to send emails on your behalf
    - A `token.json` file will be created automatically in `email_automation/`
@@ -355,22 +356,26 @@ If you encounter Google API authentication errors:
 
 1. **Delete existing tokens**:
    ```bash
-   rm email_automation/token.json
+rm email_automation/token.json
    rm sheets_automation/token.json
-   ```
+```
 
 2. **Re-authenticate**:
    ```bash
-   # For Gmail
+# For Gmail
    python -c "from email_automation import authenticate_gmail; authenticate_gmail()"
    
    # For Google Sheets
    cd sheets_automation && python read_sheet.py
-   ```
+```
 
 3. **Check OAuth scopes**: Ensure your Google Cloud Console project has the correct scopes enabled:
    - Gmail API: `https://www.googleapis.com/auth/gmail.send`
    - Sheets API: `https://www.googleapis.com/auth/spreadsheets`
+
+## 📄 License
+
+This project is proprietary to Faith Agency.eets`
 
 ## 📄 License
 
