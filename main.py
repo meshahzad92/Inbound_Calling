@@ -44,9 +44,10 @@ ULTRAVOX_CALL_CONFIG = {
     "selectedTools": [
         {
             "toolName": "transferCall",
-            "url": "http://51.20.18.79:8000/api/transfer"  # Reference your dashboard tool by name
+              # Reference your dashboard tool by name
         }
     ]
+    
 }
 
 
