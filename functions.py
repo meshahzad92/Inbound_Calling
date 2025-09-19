@@ -13,7 +13,9 @@ from twilio_sms import send_sms
 from sendgrid_mailer import send_email  # New SendGrid email system
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
+
 from google_sheet import save_to_google_sheets
+from ultravox_prompt import get_single_flow_prompt
 
 load_dotenv()
 
@@ -354,183 +356,6 @@ def email_sending(to_email, contact_name="", department=""):
 
 
 
-def get_single_flow_prompt(call_sid=""):
-    return f"""
-ROLE
-You are Faith Agency’s AI receptionist who can speak English and Spanish. Handle the entire call in one conversational flow, in the caller’s chosen language.
-
-
-TONE & BEHAVIOR
-- Warm, natural, human; listen first, then respond.
-- Short, on-point replies (1 short sentence).
-- Ask exactly ONE question per turn.
-- Paraphrase key details back briefly (“Got it—[detail].”).
-- Never rush; keep a friendly pace with natural pauses.
-
-PRIMARY GOAL
-- Guide the caller to the right department.
-- Collect their info step-by-step.
-- Confirm: “We’ll get back to you within 24 hours.”
-- Offer SMS links where relevant (no email).
-
-
-
-LANGUAGE RULE:
-- Always begin by asking: "In which language would you like to continue: English or Spanish?"
-- If caller answers "Spanish" (or any variation like "Español"), immediately switch to Spanish for the ENTIRE conversation.
-- If caller answers "English" (or default), continue in English.
-- Do not mix languages—stick fully to the caller’s chosen language for all menus, confirmations, and responses.
-
-OPENING PROMPT (ALWAYS FIRST):
-
-Ask the user if they want to speak in English or Spanish, then continue in the chosen language.
-"In which langugae you want to talk:
--English
--Spanish"
-
-English Version:
-“Thank you for calling Faith Agency — where faith, creativity, and technology come together.
-To help direct your call, you can say:
-‘Sales and Partnerships,’
-‘VIVA Audio Bible,’
-‘Casting and Talent,’
-‘Press and Media,’ or
-‘Technical Support.’
-To reach a management team member, just say their name.
-How may I assist you today?”
-
-Spanish Version:
-“Gracias por llamar a Faith Agency — donde la fe, la creatividad y la tecnología se unen.
-Para dirigir su llamada, puede decir:
-‘Ventas y Alianzas,’
-‘Biblia de Audio VIVA,’
-‘Casting y Talento,’
-‘Prensa y Medios,’ o
-‘Soporte Técnico.’
-Para comunicarse con un miembro del equipo de gestión, simplemente diga su nombre.
-¿Cómo puedo ayudarle hoy?”
-
-OPTION RECOGNITION (EXAMPLES, NOT EXHAUSTIVE)
-- “VIVA”, “option 1”, “one”, “Spanish Bible”, “audio bible” → Dept 1
-- “Casting”, “option 2”, “two”, “talent”, “audition” → Dept 2
-- “Press”, “option 3”, “three”, “media”, “journalist” → Dept 3
-- “Support”, “option 4”, “four”, “tech”, “app”, “technology” → Dept 4
-- “Sales”, “option 5”, “five”, “partnerships”, “business” → Dept 5
-- A specific person’s name → Dept 6 (Management)
-- “Repeat”, “menu”, “options again” → repeat opening menu
-- “Voicemail”, “message”, “leave message” → Dept 0
-
-INVALID / UNCLEAR
-- If unclear/invalid: “I didn’t catch that. Which option would you like?” Then re-summarize the menu.
-
-DEPARTMENT FLOWS (CONVERSATIONAL, SHORT)
-
-[1] VIVA
-- Opening: “You’ve reached the ¡VIVA! Audio Bible team.”
-- Ask: “Are you calling about events, releases, or general info?”
-- Offer: “I can text you a helpful link.”
-
-[2] Casting
-- Opening: “Thanks for your interest in Faith Agency productions.”
-- Ask: “Are you a talent rep, or a performer yourself?”
-
-[3] Press
-- Opening: “You’ve reached Faith Agency’s press desk.”
-- Ask: “Journalist, outlet, or influencer—and which project?”
-- Offer: “I can text you our press-kit link.”
-
-[4] Support
-- Opening: “You’ve reached technical support.”
-- Ask: “What device are you using?”
-- Say: “I’ll log a ticket. You’ll hear back within 24 hours.”
-
-[5] Sales
-- Opening: “Thanks for calling sales and partnerships.”
-- Ask: “Distributor, sponsor, investor—or retailer/church?”
-
-[6] Management
-- Opening: “You’ve reached Faith Agency management.”
-- Ask: “Which team member would you like to reach?”
-- If unavailable: “I’ll take your details for a callback.”
-
-[0] Voicemail
-- Prompt: “Please share your name, phone, and purpose after the tone.”
-
-TRANSFER LOGIC (IF YOUR BACKEND SIGNALS ‘AVAILABLE’)
-- Offer: “Would you like me to connect you now?”
-- If no answer/busy: “They’re unavailable. I’ll take your details.”
-
-PROGRESSIVE CAPTURE (ONE QUESTION PER TURN, WITH BRIEF CONFIRMATIONS) 
-*Compulsory Information* — Must ask all the points below in order.
-
-1) “What’s your full name?”  
-   → Confirm: “Thanks, I heard [name]. Did I get that right?”  
-   → Speak name slowly and clearly. If unclear, politely re-ask.
-
-
-2) “What’s your email address?”  
-   → Confirm: “Thanks. Let me spell it back slowly to confirm.”  
-   → Read the email **character by character** (letters, numbers, dot, at).  
-   Example: “m , s, h, a, h, z, a, d, w, a, r, i, s, at, g, m, a, i, l, dot, com.”  
-   → Ask: “Did I spell that correctly?”
-
-3) “Could you please repeat your email address once more, just to confirm?”  
-   → Again, spell it back slowly.  
-   - If both match: say “Perfect, your email is confirmed.”  
-   - If mismatch: say “Hmm, I noticed it’s different. Let’s try again carefully.”  
-     Repeat until both match.
-
-4) “Kindly, explain the purpose of your call?”  
-   → Summarize back: “So you’re calling about [short paraphrase]. Did I get that right?”
-
-5) (If relevant) “What’s your organization or company?”  
-   → Confirm slowly: “Thanks, I recorded [organization].”
-
-
-LINK/OFFER (SMS ONLY)
-- VIVA/Press: “Want me to text you the info link?”
-- Support: “I’ll text your ticket confirmation.”
-- Sales: “I’ll text our team your request summary.”
-
-FAIL-SAFES
-- If unclear: "Could you clarify in a few words?"
-- If caller asks voicemail/'0': collect name, phone, purpose; end politely.
-
-MANAGEMENT TRANSFER RULE (SIMPLE APPROACH) - *** CRITICAL ***
-- If caller asks for management or redirection:
-   1) Say: "I'll be happy to connect you to our management team. First, let me get your details."
-   2) Proceed with progressive capture to collect:
-      - Name
-      - Email address (confirm twice)  
-      - Purpose of call
-      - Organization (if relevant)
-   3) After collecting all information, say: "Perfect! I have all your details. Let me connect you to management now."
-   4) MANDATORY: Immediately use the transferCall tool with parameters:
-        callSid="{call_sid}"
-        destinationNumber = "{MANAGEMENT_REDIRECT_NUMBER}"
-        transferReason = "Caller requested management - Info collected: [name], [email], [purpose]"
-
-   5):WAIT 10 SECONDS after initiating transfer.
-
-   6):If the call is answered: AI remains silent (end participation).
-
-7):If transfer fails or times out: Say
-        "I'll make sure management gets your message and calls you back within 24 hours."
-
-*** CRITICAL REMINDER *** 
-When someone asks for "management", "redirect", "transfer", "manager", or "supervisor", you MUST:
-1. Collect their info FIRST
-2. Then IMMEDIATELY use transferCall tool - DO NOT SKIP THIS STEP
-3. The transfer is MANDATORY after info collection
-
-
-
-CLOSING (ALWAYS)
-“Thanks. We’ll get back to you within 24 hours. Goodbye.”
-
-"""
-
-
 async def create_ultravox_call(config):
     """Function to create an Ultravox call and get the join URL"""
     async with httpx.AsyncClient() as client:
@@ -561,7 +386,10 @@ def format_chat(json_data):
 def save_contact_to_csv(contact_data):
     """Save contact information to Progress.csv"""
     csv_file = "Progress.csv"
-    fieldnames = ["timestamp", "callSid", "departmentCode", "departmentName", "callerPhone", "name", "email", "organization", "status"]
+    fieldnames = [
+        "timestamp", "callSid", "departmentCode", "departmentName",
+        "callerPhone", "name", "email", "organization", "purpose", "status", "summary"
+    ]
     
     # Check if file exists to determine if we need to write headers
     file_exists = os.path.exists(csv_file)
@@ -625,13 +453,17 @@ RULES:
    - Ignore all earlier user-provided emails.
 3. DEPARTMENT → The department the user was routed to (viva, casting, press, support, sales, management, voicemail).
 4. ORGANIZATION → Only if explicitly mentioned, else empty.
+5. PURPOSE → The purpose of the call, as stated or confirmed by the user. Use the agent's paraphrase if confirmed, or the user's own words if not.
+6. SUMMARY → Write a short (1-2 lines) summary of the call, focusing on any details, requests, or context NOT already present in the other columns (name, phone, email, organization, purpose, department). Do NOT repeat info from those columns. Instead, mention any extra details, context, or special requests the user made, e.g. "User asked for a press kit and mentioned working with XYZ client." If nothing extra, say "No additional details provided."
 
 Return JSON only:
 {{
   "name": "...",
   "email": "...",
   "organization": "...",
-  "department": "..."
+  "department": "...",
+  "purpose": "...",
+  "summary": "..."
 }}
 
 TRANSCRIPT:
@@ -642,13 +474,14 @@ TRANSCRIPT:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a precise data extraction assistant. Extract only confirmed information."},
+                {"role": "system", "content": "You are a precise data extraction assistant. Extract only confirmed information. Purpose and summary must follow the rules."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.0
         )
 
         result = response.choices[0].message.content.strip()
+        print(f"🔎 Raw OpenAI response: {result}")
         contact_info = json.loads(result)
 
         # --- Regex safeguard for email after "spell it back" ---
@@ -673,6 +506,8 @@ TRANSCRIPT:
             "email": "",
             "organization": "",
             "department": "voicemail",
+            "purpose": "",
+            "summary": "",
         }
     
 
@@ -724,16 +559,16 @@ async def monitor_single_flow_call(call_id, caller_phone, call_sid):
         if contact_info:
             # Check if there was a transfer attempt and its result
             transfer_result = get_transfer_status(call_sid)
-            
+
             # Determine status based on transfer result
             if transfer_result == "success":
                 status = "Answered"
             else:
                 status = "Not answered"
-            
+
             print(f"📊 Transfer status for {call_sid}: {transfer_result} → Status: {status}")
-            
-            # Prepare data for CSV
+
+            # Prepare data for CSV and Sheets
             department_word = contact_info.get("department", "voicemail")
             csv_data = {
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -744,12 +579,14 @@ async def monitor_single_flow_call(call_id, caller_phone, call_sid):
                 "name": contact_info.get("name", ""),
                 "email": contact_info.get("email", ""),
                 "organization": contact_info.get("organization", ""),
-                "status": status  # Add status field
+                "purpose": contact_info.get("purpose", ""),
+                "status": status,  # Add status field
+                "summary": contact_info.get("summary", "")
             }
-            
-            # Save to CSV
+
+            # Save to CSV (update fieldnames if needed)
             save_contact_to_csv(csv_data)
-            
+
             # Save to Google Sheets
             print(f"\n=== SAVING TO GOOGLE SHEETS ===")
             sheets_success = save_to_google_sheets(csv_data)
@@ -757,7 +594,7 @@ async def monitor_single_flow_call(call_id, caller_phone, call_sid):
                 print(f"✅ Data saved to Google Sheets - {csv_data['departmentName']} worksheet")
             else:
                 print(f"❌ Failed to save to Google Sheets")
-            
+
             # Send SMS after saving to CSV using caller_phone from incoming API
             print(f"\n=== SENDING SMS TO CALLER ===")
             print(f"Using caller phone: {caller_phone}")
@@ -766,7 +603,7 @@ async def monitor_single_flow_call(call_id, caller_phone, call_sid):
                 print(f"✅ SMS sent successfully to {caller_phone}")
             else:
                 print(f"❌ Failed to send SMS to {caller_phone}")
-            
+
             # Send email if email address is available
             if contact_info.get("email"):
                 print(f"\n=== SENDING EMAIL TO CALLER ===")
@@ -779,14 +616,16 @@ async def monitor_single_flow_call(call_id, caller_phone, call_sid):
             else:
                 print("\n=== NO EMAIL ADDRESS AVAILABLE ===")
                 print("Skipping email sending - no email provided by caller")
-            
+
             print(f"\n=== SAVED TO PROGRESS.CSV ===")
             print(f"Department: {csv_data['departmentName']}")
             print(f"Name: {csv_data['name']}")
-            print(f"Phone: {csv_data['phone']}")
+            print(f"Phone: {csv_data['callerPhone']}")
             print(f"Email: {csv_data['email']}")
             print(f"Organization: {csv_data['organization']}")
+            print(f"Purpose: {csv_data['purpose']}")
             print(f"Status: {csv_data['status']}")
+            print(f"Summary: {csv_data['summary']}")
             print("=" * 50)
         else:
             print("No contact information found in transcript")

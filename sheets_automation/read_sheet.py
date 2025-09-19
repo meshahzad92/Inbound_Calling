@@ -48,7 +48,7 @@ class SimpleSheetReader:
                         if os.path.exists(self.token_file):
                             os.remove(self.token_file)
                         creds = None
-                
+                    
                 # If we still don't have valid credentials, start OAuth flow
                 if not creds or not creds.valid:
                     if not os.path.exists(self.credentials_file):

@@ -24,6 +24,8 @@ MANIFEST
 email_automation/token.json
 email_automation/credentials.json
 credentials.json
+sheets_automation/token.json
+sheets_automation/credentials.json
 # Virtual Environment
 venv/
 env/
@@ -67,4 +69,4 @@ docker-compose.override.yml
 
 # Temporary files
 *.tmp
-*.temp
+*.tempsheets_automation/token.json

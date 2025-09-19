@@ -67,10 +67,8 @@ class GoogleSheetManager:
     def append_call_data(self, call_data):
         """
         Append call data to the appropriate worksheet
-        
         Args:
             call_data (dict): Call data containing department info and contact details
-        
         Returns:
             bool: True if successful, False otherwise
         """
@@ -78,34 +76,36 @@ class GoogleSheetManager:
             if not self.service:
                 print("❌ Google Sheets service not authenticated")
                 return False
-            
+
             if not self.sheet_id:
                 print("❌ SheetID not found in .env file")
                 return False
-            
+
             # Get the worksheet name based on department
             department_name = call_data.get("departmentName", "Unknown Department")
             worksheet_name = self.get_worksheet_name(department_name)
-            
+
             print(f"📊 Saving to worksheet: {worksheet_name}")
-            
-            # Prepare data row - match the column order including Status
+
+            # Prepare data row - match the new column order
             row_data = [
                 call_data.get("timestamp", ""),
                 call_data.get("callerPhone", ""),
                 call_data.get("name", ""),
                 call_data.get("email", ""),
                 call_data.get("organization", ""),
-                call_data.get("status", "Not answered")  # Default to "Not answered"
+                call_data.get("purpose", ""),
+                call_data.get("status", "Not answered"),
+                call_data.get("summary", "")
             ]
-            
+
             # Append data to the worksheet
-            range_name = f"{worksheet_name}!A:F"
-            
+            range_name = f"{worksheet_name}!A:H"
+
             body = {
                 'values': [row_data]
             }
-            
+
             result = self.service.spreadsheets().values().append(
                 spreadsheetId=self.sheet_id,
                 range=range_name,
@@ -113,10 +113,10 @@ class GoogleSheetManager:
                 insertDataOption='INSERT_ROWS',
                 body=body
             ).execute()
-            
+
             print(f"✅ Data saved to {worksheet_name} - {result.get('updates', {}).get('updatedCells', 0)} cells updated")
             return True
-            
+
         except Exception as e:
             print(f"❌ Error saving to Google Sheets: {e}")
             return False

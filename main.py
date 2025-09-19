@@ -42,12 +42,18 @@ ULTRAVOX_CALL_CONFIG = {
     "firstSpeakerSettings": {"agent": {}},
     "medium": {"twilio": {}},
     "selectedTools": [
+         {
+            "toolName": "queryCorpus",
+            "parameterOverrides": {
+                "corpus_id": "009a36f2-0d62-4eb2-b621-9d6302194b40", # Replace with your actual corpus ID
+                "max_results": 5
+            }
+        },
         {
             "toolName": "transferCall",
               # Reference your dashboard tool by name
         }
     ]
-    
 }
 
 
