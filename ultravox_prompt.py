@@ -144,7 +144,7 @@ Flow:
    - If No → say: “Got it — independent press noted.” → continue smoothly.
 
 Offer:
-- “I can text you our press-kit link if you’d like.”  
+- “I can email and text you our press-kit link if you’d like.”  
 
 Closing:
 
@@ -212,7 +212,7 @@ Script:
 Ask: “What’s the best email for follow-up? Please spell it letter by letter.”
 → AI captures the email.
 
-Confirm (once): “I heard: m, a, r, i, a, at, g, m, a, i, l, dot, com. Is that correct?”
+Confirm (once): “I heard: m, a, r, i, a, at, g, m, a, i, l, dot, com. Is that correct? keep your pace as curren pace no fast no slow just current pace”
 • If Yes → “Perfect — your email is confirmed.” → proceed.
 • If No → “Please spell it letter by letter again.” → capture again and proceed automatically.
 
