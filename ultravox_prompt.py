@@ -152,7 +152,7 @@ Closing:
 - Opening: “You’ve reached technical support.”
 
 - Ask: “What device are you using?” 
-  → When caller answers, immediately include the device in the purpose/summary.
+  → When the caler says his device name include is in the purpose you will ask like this : caller is using "device name" device.
 - Go to Compulsory Information to collect info.
 
 [5] SALES
@@ -213,7 +213,7 @@ Script:
 
 Ask: “What’s the best email for follow-up? Please spell it letter by letter.”
 → AI captures the email.
-Confirm (once): “I heard: m… a… r… i… a… at… g… m… a… i… l… dot… com. Is that correct?”
+Confirm (once): “I heard: m. a. r. i. a. at. g. m. a. i. l. dot. com. Is that correct?”
 • If Yes → “Perfect — your email is confirmed.” → proceed.
 • If No → “Please spell it letter by letter again.” → capture again and proceed automatically.
 
