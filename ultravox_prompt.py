@@ -200,8 +200,7 @@ Policy (simple, no loops):
 
 Ask first time letter-by-letter.
 
-AI confirms only once.
-
+AI confirms only once slowly letter-by-letter.
 If user says “no/incorrect” → ask one more time letter-by-letter.
 
 After second attempt, accept email automatically, no further confirmation.
