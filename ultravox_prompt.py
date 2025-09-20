@@ -213,7 +213,7 @@ Script:
 
 Ask: “What’s the best email for follow-up? Please spell it letter by letter.”
 → AI captures the email.
-Confirm (once , slowly): “I heard: m,a,r,i,a,at,g,m,a,i,l,dot,com. Is that correct?”
+Confirm (once, repeat slowly letter-by-letter): “I heard: m, a, r, i, a, a, t, g, m, a, i, l, d, o, t, c, o, m. . Is that correct?”
 • If Yes → “Perfect — your email is confirmed.” → proceed.
 • If No → “Please spell it letter by letter again.” → capture again and proceed automatically.
 
