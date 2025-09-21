@@ -179,7 +179,7 @@ Flow:
 Transfer:
 - After capturing details → say:
   “Perfect — I have your details. Let me connect you to [requested team member] now.”
-  Take 5 seconds pause and then say: "Sorry, [team member] is not available right now. You can expect a response within the next 24 hours."
+  Take a 10 seconds pause and then say: "Sorry, [team member] is not available right now. You can expect a response within the next 24 hours."
   "Go to MANAGEMENT transfer rule and transfercall as data is already collected."
 
 [0] VOICEMAIL
