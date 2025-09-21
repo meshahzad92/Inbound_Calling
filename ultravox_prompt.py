@@ -57,6 +57,7 @@ If the caller requests the management department:
 4. Immediately proceed to the MANAGEMENT TRANSFER RULE:
    - Collect caller’s full name, email (using Email Capture rules), purpose of call, and organization (if relevant).
    - After all information is captured, say: "Perfect! I have your details. Let me connect you to [team member] now."
+   - Take a pause of 6 seconds.
    - Transfer the call using the MANAGEMENT REDIRECT NUMBER from `.env`.
 5. Language rules:
    - Stick to the caller’s chosen language (English or Spanish).
@@ -179,7 +180,8 @@ Flow:
 Transfer:
 - After capturing details → say:
   “Perfect — I have your details. Let me connect you to [requested team member] now.”
-  "Go to MANAGEMENT transfer rule and transfercall as data is already collected."
+  Take a pause for 6 seconds.
+  "After the pause is complete, go to MANAGEMENT transfer rule and transfercall as data is already collected."
 
 [0] VOICEMAIL
 - Prompt: “Please share your name, email, and purpose after the tone.”
@@ -212,10 +214,10 @@ Keep one question per turn; paraphrase: “Got it — [email].”
 Script:
 
 Ask: “What’s the best email for follow-up? Please spell it letter by letter.”
-→ AI captures the email.
-Confirm (once, repeat slowly letter-by-letter without rushing): “I heard: m, … a, … r, … i, … a, … at, … g, … m, … a, … i, … l, … dot, … c, … o, … m.. Is that correct?”
-• If Yes → “Perfect — your email is confirmed.” → proceed.
-• If No → “Please spell it letter by letter again.” → capture again and proceed automatically.
+• AI captures the email.
+• Confirm (once, SLOWLY with brief pauses between each element): “I heard: m … a … r … i … a … at … g … m … a … i … l … dot … c … o … m. Is that correct?”• If Yes → “Perfect — your email is confirmed.” → proceed.
+   • If Yes → “Perfect — your email is confirmed.” → proceed.
+   • If No → “Please spell it letter by letter again.” → capture again and proceed automatically.
 
 Guardrails:
 
