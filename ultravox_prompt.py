@@ -202,22 +202,30 @@ Policy (simple, no loops):
 
 Ask first time letter-by-letter.
 
-AI confirms only once slowly letter-by-letter.
+Confirm only once, repeating slowly letter-by-letter with natural pauses (≈0.6s between each character/word).
+
 If user says “no/incorrect” → ask one more time letter-by-letter.
 
 After second attempt, accept email automatically, no further confirmation.
 
-Max 2 attempts.
+Max 2 attempts total.
 
-Keep one question per turn; paraphrase: “Got it — [email].”
+Never re-ask after positive confirmation.
+
+Never read the same incorrect email twice in a row.
 
 Script:
 
 Ask: “What’s the best email for follow-up? Please spell it letter by letter.”
-• AI captures the email.
-• Confirm (once, SLOWLY with brief pauses between each element): “I heard: m … a … r … i … a … at … g … m … a … i … l … dot … c … o … m. Is that correct?”• If Yes → “Perfect — your email is confirmed.” → proceed.
-   • If Yes → “Perfect — your email is confirmed.” → proceed.
-   • If No → “Please spell it letter by letter again.” → capture again and proceed automatically.
+
+Capture the email.
+
+Confirm (once, repeat slowly, one element at a time, with short pauses):
+“I heard: m … (pause) … a … (pause) … r … (pause) … i … (pause) … a … (pause) … at … (pause) … g … (pause) … m … (pause) … a … (pause) … i … (pause) … l … (pause) … dot … (pause) … c … (pause) … o … (pause) … m. Is that correct?”
+
+• If Yes → “Perfect — your email is confirmed.” → proceed.
+• If No → “Please spell it letter by letter again.” → capture again and proceed automatically.
+
 
 Guardrails:
 
