@@ -180,8 +180,8 @@ Flow:
 Transfer:
 - After capturing details → say:
   “Perfect — I have your details. Let me connect you to [requested team member] now.”
-  Take a pause for 6 seconds.
-  "After the pause is complete, go to MANAGEMENT transfer rule and transfercall as data is already collected."
+  
+  "Go to MANAGEMENT transfer rule and transfercall as data is already collected. Make sure to pause for some while as mentioned in the prompt there."
 
 [0] VOICEMAIL
 - Prompt: “Please share your name, email, and purpose after the tone.”
