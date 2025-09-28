@@ -177,7 +177,7 @@ async def transfer_call(request: Request):
 
 
 @app.get("/api/pause")
-async def pause_endpoint(seconds: int = 20):
+async def pause_endpoint(seconds: int = 10):
     """Simple pause endpoint for Ultravox tools"""
     try:
         print(f"⏸️ Pausing for {seconds} seconds...")
