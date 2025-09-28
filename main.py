@@ -179,14 +179,43 @@ async def transfer_call(request: Request):
 @app.get("/api/pause")
 async def pause_endpoint(seconds: int = 10):
     """Simple pause endpoint for Ultravox tools"""
+    import time
+    call_start = time.time()
+    call_id = int(call_start * 1000) % 10000  # Simple call ID
+    
     try:
-        print(f"⏸️ Pausing for {seconds} seconds...")
+        print(f"🔥 PAUSE CALL #{call_id} STARTED - Requested: {seconds} seconds")
+        print(f"⏰ Start time: {time.strftime('%H:%M:%S', time.localtime(call_start))}")
+        
+        sleep_start = time.time()
         await asyncio.sleep(seconds)
-        print(f"▶️ Pause completed after {seconds} seconds")
-        return {"status": "success", "duration": seconds}
+        sleep_end = time.time()
+        
+        actual_sleep_time = sleep_end - sleep_start
+        total_time = sleep_end - call_start
+        
+        print(f"✅ PAUSE CALL #{call_id} COMPLETED")
+        print(f"⏱️  Requested: {seconds}s | Actual sleep: {actual_sleep_time:.2f}s | Total time: {total_time:.2f}s")
+        print(f"🏁 End time: {time.strftime('%H:%M:%S', time.localtime(sleep_end))}")
+        
+        return {
+            "status": "success", 
+            "duration": seconds,
+            "actual_duration": round(actual_sleep_time, 2),
+            "total_time": round(total_time, 2),
+            "call_id": call_id
+        }
     except Exception as e:
-        print(f"❌ Error during pause: {e}")
-        return {"status": "error", "message": str(e), "duration": 0}
+        error_time = time.time()
+        total_time = error_time - call_start
+        print(f"❌ PAUSE CALL #{call_id} ERROR after {total_time:.2f}s: {e}")
+        return {
+            "status": "error", 
+            "message": str(e), 
+            "duration": 0,
+            "total_time": round(total_time, 2),
+            "call_id": call_id
+        }
 
 
 if __name__ == "__main__":
