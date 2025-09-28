@@ -41,12 +41,6 @@ ULTRAVOX_CALL_CONFIG = {
     "temperature": 0.3,
     "firstSpeakerSettings": {"agent": {}},
     "medium": {"twilio": {}},
-    "inactivityMessages": [
-        {
-            "duration": "20s",
-            "message": "Sorry, [team member] is not available right now. You can expect a response within the next 24 hours."
-        }
-    ],
     "selectedTools": [
          {
             "toolName": "queryCorpus",
