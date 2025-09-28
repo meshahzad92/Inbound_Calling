@@ -176,32 +176,17 @@ async def transfer_call(request: Request):
         return {"status": "failed", "message": f"Transfer endpoint error: {str(e)}"}
 
 
-class PauseRequest(BaseModel):
-    seconds: int = 20  # Default 20 seconds
-
-@app.post("/api/pause")
-async def pause_endpoint(request: PauseRequest = PauseRequest()):
-    """
-    API endpoint to pause for specified seconds
-    Used by Ultravox pauseForSeconds tool
-    """
+@app.get("/api/pause")
+async def pause_endpoint(seconds: int = 20):
+    """Simple pause endpoint for Ultravox tools"""
     try:
-        print(f"⏸️ Pause endpoint called - pausing for {request.seconds} seconds...")
-        await asyncio.sleep(request.seconds)
-        print(f"▶️ Pause completed after {request.seconds} seconds")
-        
-        return {
-            "status": "success",
-            "message": f"Paused for {request.seconds} seconds",
-            "duration": request.seconds
-        }
+        print(f"⏸️ Pausing for {seconds} seconds...")
+        await asyncio.sleep(seconds)
+        print(f"▶️ Pause completed after {seconds} seconds")
+        return {"status": "success", "duration": seconds}
     except Exception as e:
         print(f"❌ Error during pause: {e}")
-        return {
-            "status": "error",
-            "message": f"Pause failed: {str(e)}",
-            "duration": 0
-        }
+        return {"status": "error", "message": str(e), "duration": 0}
 
 
 if __name__ == "__main__":
