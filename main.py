@@ -1,7 +1,7 @@
 import os
 import asyncio
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from twilio.twiml.voice_response import VoiceResponse
 from pydantic import BaseModel
@@ -198,24 +198,45 @@ async def pause_endpoint(seconds: int = 10):
         print(f"⏱️  Requested: {seconds}s | Actual sleep: {actual_sleep_time:.2f}s | Total time: {total_time:.2f}s")
         print(f"🏁 End time: {time.strftime('%H:%M:%S', time.localtime(sleep_end))}")
         
-        return {
+        from fastapi.responses import JSONResponse
+        
+        response_data = {
             "status": "success", 
             "duration": seconds,
             "actual_duration": round(actual_sleep_time, 2),
             "total_time": round(total_time, 2),
             "call_id": call_id
         }
+        
+        # Add headers to speed up Ultravox processing
+        return JSONResponse(
+            content=response_data,
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "close",
+                "Content-Type": "application/json"
+            }
+        )
     except Exception as e:
         error_time = time.time()
         total_time = error_time - call_start
         print(f"❌ PAUSE CALL #{call_id} ERROR after {total_time:.2f}s: {e}")
-        return {
+        error_data = {
             "status": "error", 
             "message": str(e), 
             "duration": 0,
             "total_time": round(total_time, 2),
             "call_id": call_id
         }
+        
+        return JSONResponse(
+            content=error_data,
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "close",
+                "Content-Type": "application/json"
+            }
+        )
 
 
 if __name__ == "__main__":
