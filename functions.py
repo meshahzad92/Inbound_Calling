@@ -455,6 +455,7 @@ RULES:
 4. ORGANIZATION → Only if explicitly mentioned, else empty.
 5. PURPOSE → The purpose of the call, as stated or confirmed by the user. Use the agent's paraphrase if confirmed, or the user's own words if not.
 6. SUMMARY → Write a short (1-2 lines) summary of the call, focusing on any details, requests, or context NOT already present in the other columns (name, phone, email, organization, purpose, department). Do NOT repeat info from those columns. Instead, mention any extra details, context, or special requests the user made, e.g. "User asked for a press kit and mentioned working with XYZ client." If nothing extra, say "No additional details provided."
+7. DELIVERY_PREFERENCE → Analyze the transcript to determine how the user wants to receive information (SMS, Email, or Both). Look for questions like "Would you like the link by SMS or email?" and the user's response. Return one of: ["Sms"], ["Email"], or ["Both"].
 
 Return JSON only:
 {{
@@ -463,8 +464,17 @@ Return JSON only:
   "organization": "...",
   "department": "...",
   "purpose": "...",
-  "summary": "..."
+  "summary": "...",
+  "delivery_preference": ["Sms"] or ["Email"] or ["Both"]
 }}
+
+Examples for delivery preference:
+- User says "SMS please" → ["Sms"]
+- User says "Email is better" → ["Email"] 
+- User says "Both please" or "You can send it to my email and also text me" → ["Both"]
+- User says "Just text me" → ["Sms"]
+- User says "Send it to my email" → ["Email"]
+- If no preference mentioned → ["Both"]
 
 TRANSCRIPT:
 {transcript}
@@ -508,6 +518,7 @@ TRANSCRIPT:
             "department": "voicemail",
             "purpose": "",
             "summary": "",
+            "delivery_preference": ["Both"]
         }
     
 
@@ -595,27 +606,73 @@ async def monitor_single_flow_call(call_id, caller_phone, call_sid):
             else:
                 print(f"❌ Failed to save to Google Sheets")
 
-            # Send SMS after saving to CSV using caller_phone from incoming API
-            print(f"\n=== SENDING SMS TO CALLER ===")
-            print(f"Using caller phone: {caller_phone}")
-            sms_result = sms_sending(caller_phone, TWILIO_PHONE_NUMBER)
-            if sms_result:
-                print(f"✅ SMS sent successfully to {caller_phone}")
+            # Handle delivery preference based on user's choice
+            delivery_preference = contact_info.get("delivery_preference", ["Both"])
+            print(f"\n=== USER DELIVERY PREFERENCE: {delivery_preference} ===")
+            
+            # Extract the preference string (remove the list brackets)
+            preference = delivery_preference[0] if isinstance(delivery_preference, list) and len(delivery_preference) > 0 else "Both"
+            
+            # Initialize results
+            sms_sent = False
+            email_sent = False
+            
+            # Handle SMS sending based on preference
+            if preference in ["Sms", "Both"]:
+                print(f"\n=== SENDING SMS TO CALLER (User requested: {preference}) ===")
+                print(f"Using caller phone: {caller_phone}")
+                try:
+                    sms_result = sms_sending(caller_phone, TWILIO_PHONE_NUMBER)
+                    if sms_result:
+                        print(f"✅ SMS sent successfully to {caller_phone}")
+                        sms_sent = True
+                    else:
+                        print(f"❌ Failed to send SMS to {caller_phone}")
+                except Exception as e:
+                    print(f"❌ Error sending SMS: {e}")
             else:
-                print(f"❌ Failed to send SMS to {caller_phone}")
+                print(f"\n=== SKIPPING SMS (User preference: {preference}) ===")
+                print("User did not request SMS delivery")
 
-            # Send email if email address is available
-            if contact_info.get("email"):
-                print(f"\n=== SENDING EMAIL TO CALLER ===")
-                print(f"Using email: {contact_info.get('email')}")
-                email_result = email_sending(contact_info.get("email"), contact_info.get("name", ""))
-                if email_result:
-                    print(f"✅ Email sent successfully to {contact_info.get('email')}")
+            # Handle Email sending based on preference
+            if preference in ["Email", "Both"]:
+                if contact_info.get("email"):
+                    print(f"\n=== SENDING EMAIL TO CALLER (User requested: {preference}) ===")
+                    print(f"Using email: {contact_info.get('email')}")
+                    try:
+                        email_result = email_sending(
+                            contact_info.get("email"), 
+                            contact_info.get("name", ""),
+                            csv_data.get('departmentName', '')
+                        )
+                        if email_result:
+                            print(f"✅ Email sent successfully to {contact_info.get('email')}")
+                            email_sent = True
+                        else:
+                            print(f"❌ Failed to send email to {contact_info.get('email')}")
+                    except Exception as e:
+                        print(f"❌ Error sending email: {e}")
                 else:
-                    print(f"❌ Failed to send email to {contact_info.get('email')}")
+                    print(f"\n=== EMAIL REQUESTED BUT NO EMAIL ADDRESS (User requested: {preference}) ===")
+                    print("User requested email delivery but no email address was provided")
+                    print("Consider following up via SMS or phone call")
             else:
-                print("\n=== NO EMAIL ADDRESS AVAILABLE ===")
-                print("Skipping email sending - no email provided by caller")
+                print(f"\n=== SKIPPING EMAIL (User preference: {preference}) ===")
+                print("User did not request email delivery")
+            
+            # Summary of delivery actions
+            print(f"\n=== DELIVERY SUMMARY ===")
+            print(f"User preference: {preference}")
+            print(f"SMS sent: {'✅ Yes' if sms_sent else '❌ No'}")
+            print(f"Email sent: {'✅ Yes' if email_sent else '❌ No'}")
+            
+            # Handle edge cases
+            if preference == "Email" and not contact_info.get("email") and not sms_sent:
+                print(f"⚠️  WARNING: User wanted email only but no email provided and no SMS sent as fallback")
+            elif preference == "Sms" and not sms_sent and contact_info.get("email"):
+                print(f"⚠️  Note: SMS failed but email is available - consider manual follow-up")
+            elif preference == "Both" and not sms_sent and not email_sent:
+                print(f"⚠️  CRITICAL: User wanted both delivery methods but neither succeeded")
 
             print(f"\n=== SAVED TO PROGRESS.CSV ===")
             print(f"Department: {csv_data['departmentName']}")
