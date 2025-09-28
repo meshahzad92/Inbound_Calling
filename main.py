@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from twilio.twiml.voice_response import VoiceResponse
+from pydantic import BaseModel
 from dotenv import load_dotenv
 
 # Import all functions from functions.py
@@ -52,6 +53,10 @@ ULTRAVOX_CALL_CONFIG = {
         {
             "toolName": "transferCall",
               # Reference your dashboard tool by name
+        },
+        {
+            "toolName": "pauseForSeconds",
+            # Reference your custom pause tool by name
         }
     ]
 }
@@ -170,6 +175,33 @@ async def transfer_call(request: Request):
         print(f"❌ Error in transfer endpoint: {e}")
         return {"status": "failed", "message": f"Transfer endpoint error: {str(e)}"}
 
+
+class PauseRequest(BaseModel):
+    seconds: int = 20  # Default 20 seconds
+
+@app.post("/api/pause")
+async def pause_endpoint(request: PauseRequest = PauseRequest()):
+    """
+    API endpoint to pause for specified seconds
+    Used by Ultravox pauseForSeconds tool
+    """
+    try:
+        print(f"⏸️ Pause endpoint called - pausing for {request.seconds} seconds...")
+        await asyncio.sleep(request.seconds)
+        print(f"▶️ Pause completed after {request.seconds} seconds")
+        
+        return {
+            "status": "success",
+            "message": f"Paused for {request.seconds} seconds",
+            "duration": request.seconds
+        }
+    except Exception as e:
+        print(f"❌ Error during pause: {e}")
+        return {
+            "status": "error",
+            "message": f"Pause failed: {str(e)}",
+            "duration": 0
+        }
 
 
 if __name__ == "__main__":

@@ -272,7 +272,7 @@ MANAGEMENT TRANSFER RULE (MANDATORY WHEN ‘MANAGEMENT/TRANSFER’ IS REQUESTED)
  
  - After collecting all caller details:
   1) Say: “Perfect! I have your details. Let me try to reach [team member] now.”
-  2) Count from 1-30 internally without speaking anything, user shouldn't hear anything just count slowly internallly.
+  2) Call the pauseForSeconds tool: pauseForSeconds(seconds=20)
   3) Then, Say: "Sorry, [team member] is not available right now. You can expect a response within the next 24 hours."
   4) Ask: “Is there anything else I can help you with?”
   5) Close: “Great! Have a blessed day. Goodbye.”
