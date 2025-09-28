@@ -200,7 +200,7 @@ Flow:
 Transfer:
 - After capturing details → say:
   “Perfect! I have your details. Should I try to connect you to the [team member] now.”
-  *Critical:* Immediately, call the pauseForSeconds tool: pauseForSeconds(seconds=10)
+  *Critical:* Immediately, call the pauseForSeconds tool: pauseForSeconds(seconds=20)
   Then, Say: "Sorry, [team member] is not available right now. You can expect a response within the next 24 hours."
   "Go to MANAGEMENT transfer rule and transfercall as data is already collected."
 
@@ -273,7 +273,7 @@ MANAGEMENT TRANSFER RULE (MANDATORY WHEN ‘MANAGEMENT/TRANSFER’ IS REQUESTED)
  
  - After collecting all caller details:
   1) Say: “Perfect! I have your details. Should I try to connect you to the [team member] now.”
-  2) *Critical:* Immediately,Call the pauseForSeconds tool: pauseForSeconds(seconds=10)
+  2) *Critical:* Immediately,Call the pauseForSeconds tool: pauseForSeconds(seconds=20)
   3) Then, Say: "Sorry, [team member] is not available right now. You can expect a response within the next 24 hours."
   4) Ask: “Is there anything else I can help you with?”
   5) Close: “Great! Have a blessed day. Goodbye.”
