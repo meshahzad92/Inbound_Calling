@@ -38,7 +38,7 @@ app.add_middleware(
 
 ULTRAVOX_CALL_CONFIG = {
     "model": "fixie-ai/ultravox",
-    "voice": "Mark",
+    "voice": "Jessica",
     "temperature": 0.3,
     "firstSpeakerSettings": {"agent": {}},
     "medium": {"twilio": {}},
@@ -52,11 +52,9 @@ ULTRAVOX_CALL_CONFIG = {
         },
         {
             "toolName": "transferCall",
-              # Reference your dashboard tool by name
         },
         {
             "toolName": "pauseForSeconds",
-            # Reference your custom pause tool by name
         }
     ]
 }
