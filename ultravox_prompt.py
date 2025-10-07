@@ -117,7 +117,7 @@ OPTION RECOGNITION (EXAMPLES, NOT EXHAUSTIVE)
 
 INVALID / UNCLEAR / No Response
 - If unclear/invalid: “I didn’t catch that. Which option would you like?” Then re-summarize the menu.
-- If the user doesn't respond:
+- If user is SILENT or gives NO RESPONSE after the menu:
     Then again ask:
     “I did not hear a selection.  Let’s try it this way:
       Press 1, for Sales and Partnerships
@@ -126,9 +126,8 @@ INVALID / UNCLEAR / No Response
       Press 4 for Press and Media, or
       Press 5 for Technical Support
       Press 0 to leave a message  
-
-      If user press anything use the OPTION RECOGNITION and trasfer to respective department.
-      But, if the user doesn't respond then call the hangUp tool and end the call.
+- If user is SILENT again after the numbered menu:
+    Call the hangUp tool and end the call.
 
 DEPARTMENT FLOWS (CONVERSATIONAL, SHORT)
 
