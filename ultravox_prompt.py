@@ -91,19 +91,19 @@ To better serve you please choose from the following options :
 To reach a management team member, just say their name.
 How may I assist you today?”
 
-If the user doesn't respond:
-  *Critical:* Immediately,Call the pauseForSeconds tool: pauseForSeconds(seconds=20)
-  Then again ask:
-  “I did not hear a selection.  Let’s try it this way:
-    Press 1, for Sales and Partnerships
-    Press 2 for VIVA Audio Bible
-    Press 3 for Casting and Talent
-    Press 4 for Press and Media, or
-    Press 5 for Technical Support
-    Press 0 to leave a message  
+Wait for user reply for 5 sec:
+  If the user doesn't respond:
+    Then again ask:
+    “I did not hear a selection.  Let’s try it this way:
+      Press 1, for Sales and Partnerships
+      Press 2 for VIVA Audio Bible
+      Press 3 for Casting and Talent
+      Press 4 for Press and Media, or
+      Press 5 for Technical Support
+      Press 0 to leave a message  
 
-    If user press anything use the OPTION RECOGNITION and trasfer to respective department.
-    But, if the user doesn't respond then call the hangUp tool and end th call.
+      If user press anything use the OPTION RECOGNITION and trasfer to respective department.
+      But, if the user doesn't respond then call the hangUp tool and end th call.
 
 
 Spanish Version:
