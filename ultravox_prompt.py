@@ -98,7 +98,7 @@ To better serve you please choose from the following options :
 To reach a management team member, just say their name.
 How may I assist you today?”
 
-2):*Critical:* Immediately,Call the pauseForSeconds tool: pauseForSeconds(seconds=20)
+2):*Critical:* Immediately,Call the pauseForSeconds tool: pauseForSeconds(seconds=5)
 3):Then, Say: “I didn’t hear a selection. Let’s try it this way:
   Press 1 for Sales and Partnerships,
   Press 2 for VIVA Audio Bible,
