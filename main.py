@@ -67,8 +67,7 @@ ULTRAVOX_CALL_CONFIG = {
         },
         {
         "duration": "10s",
-        "message": "I still haven't heard from you. Ending the call now. Goodbye.",
-        "action": "hangUp"
+        "message": "I still haven't heard from you. Ending the call now. Goodbye."
 
         }
         
