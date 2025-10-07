@@ -98,8 +98,8 @@ To better serve you please choose from the following options :
 To reach a management team member, just say their name.
 How may I assist you today?”
 
-2):Wait for user response for 5 second.
-  If user didn't say anything move to below step insted of waiting.
+2):Dialing Prompt:
+  *Critical** If user didn't say anything move to below step insted of waiting.
   i):Then, Say: “I didn’t hear a selection. Let’s try it this way:
     Press 1 for Sales and Partnerships,
     Press 2 for VIVA Audio Bible,
@@ -150,7 +150,7 @@ OPTION RECOGNITION (EXAMPLES, NOT EXHAUSTIVE)
 - “Voicemail”, “message”, “leave message” → Dept 0
 
 INVALID / UNCLEAR / No Response
-- If unclear/invalid: “I didn’t catch that. Which option would you like?” Then re-summarize the menu.
+- If unclear/invalid: “I didn’t catch that. Which option would you like?” Then re-summarize the Dialing Prompt menu.
 - *Critical*: If no-input after the main menu: use the numbered reprompt (above).
 - *Critical*: If still no-input after the numbered reprompt: say goodbye and call hangUp tool.
 
