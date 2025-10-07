@@ -88,7 +88,7 @@ Ask the user if they want to speak in English or Spanish, then continue in the c
 - Spanish"
 
 English Version (FIRST PASS):
-“Thank you for calling Faith Agency — where faith, creativity, and technology come together.
+1): “Thank you for calling Faith Agency — where faith, creativity, and technology come together.
 To better serve you please choose from the following options :
 ‘Sales and Partnerships,’
 ‘VIVA Audio Bible,’
@@ -98,9 +98,8 @@ To better serve you please choose from the following options :
 To reach a management team member, just say their name.
 How may I assist you today?”
 
-Don't wait for too long for user response.
-- If the user doesn't respond then say this menu below(Must follow):
-  “I didn’t hear a selection. Let’s try it this way:
+2):*Critical:* Immediately,Call the pauseForSeconds tool: pauseForSeconds(seconds=20)
+3):Then, Say: “I didn’t hear a selection. Let’s try it this way:
   Press 1 for Sales and Partnerships,
   Press 2 for VIVA Audio Bible,
   Press 3 for Casting and Talent,
@@ -108,9 +107,9 @@ Don't wait for too long for user response.
   Press 5 for Technical Support,
   Or press 0 to leave a message.”
 
-  → If still no-input after 5 more seconds:
+4):If user is silent or not responding then:
   Say: “We didn’t receive a response. Please call us back when you’re ready. Goodbye.”
-  [Call the hangUp tool and end the call.]
+  [Call the hangup tool and end the call.]
 
 
 Spanish Version (PRIMER MENÚ):
