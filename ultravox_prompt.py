@@ -98,19 +98,20 @@ To better serve you please choose from the following options :
 To reach a management team member, just say their name.
 How may I assist you today?”
 
-2):*Critical:* Immediately,Call the pauseForSeconds tool: pauseForSeconds(seconds=5)
-3):Then, Say: “I didn’t hear a selection. Let’s try it this way:
-  Press 1 for Sales and Partnerships,
-  Press 2 for VIVA Audio Bible,
-  Press 3 for Casting and Talent,
-  Press 4 for Press and Media,
-  Press 5 for Technical Support,
-  Or press 0 to leave a message.”
+2):Wait for user response for 5 second.
+  If user didn't say anything move to below step insted of waiting.
+  i):Then, Say: “I didn’t hear a selection. Let’s try it this way:
+    Press 1 for Sales and Partnerships,
+    Press 2 for VIVA Audio Bible,
+    Press 3 for Casting and Talent,
+    Press 4 for Press and Media,
+    Press 5 for Technical Support,
+    Or press 0 to leave a message.”
 
-4):If user is silent or not responding then:
-  Say: “We didn’t receive a response. Please call us back when you’re ready. Goodbye.”
-  [Call the hangup tool and end the call.]
-
+  ii):If still user is silent or not responding then:
+    Say: “We didn’t receive a response. Please call us back when you’re ready. Goodbye.”
+    **Critical**: Immediately Call the hangup tool and end the call.
+    
 
 Spanish Version (PRIMER MENÚ):
 “Gracias por llamar a Faith Agency — donde la fe, la creatividad y la tecnología se unen.
