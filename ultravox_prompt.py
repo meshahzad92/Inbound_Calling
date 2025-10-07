@@ -98,7 +98,6 @@ To better serve you please choose from the following options :
 To reach a management team member, just say their name.
 How may I assist you today?”
 
-→ If no-input for 5 seconds: SPEAK THIS NUMBERED REPROMPT (don’t wait):
 “I didn’t hear a selection. Let’s try it this way:
 Press 1 for Sales and Partnerships,
 Press 2 for VIVA Audio Bible,
