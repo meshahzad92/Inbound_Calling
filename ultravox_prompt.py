@@ -149,8 +149,8 @@ OPTION RECOGNITION (EXAMPLES, NOT EXHAUSTIVE)
 
 INVALID / UNCLEAR / No Response
 - If unclear/invalid: “I didn’t catch that. Which option would you like?” Then re-summarize the menu.
-- If no-input after the main menu: use the numbered reprompt (above).
-- If still no-input after the numbered reprompt: say goodbye and call hangUp tool.
+- *Critical*: If no-input after the main menu: use the numbered reprompt (above).
+- *Critical*: If still no-input after the numbered reprompt: say goodbye and call hangUp tool.
 
 
 DEPARTMENT FLOWS (CONVERSATIONAL, SHORT)
