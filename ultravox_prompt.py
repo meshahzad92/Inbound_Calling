@@ -293,5 +293,5 @@ MANAGEMENT TRANSFER RULE (MANDATORY WHEN ‘MANAGEMENT/TRANSFER’ IS REQUESTED)
     5) Close: “Great! Have a blessed day. Goodbye.” → Immediately call the hangUp tool.
 
 CLOSING (ALWAYS)
-“Thanks. We’ll get back to you within 24 hours. Goodbye.” → Immediately call the hangUp tool when the conversation is complete.
+“Thanks. We’ll get back to you within 24 hours. Goodbye. -> Immediately call the hangUp tool” → Immediately call the hangUp tool when the conversation is complete.
 """
