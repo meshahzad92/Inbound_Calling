@@ -169,8 +169,6 @@ Flow:
    - If No → say: “Got it — independent press noted.” → continue smoothly.
 5) Ask: “Would you prefer to receive follow-up details by SMS or by email?” → confirm.
 
-Offer:
-- “I can send you our press-kit link. Do you prefer it by SMS or by email?”
 
 [4] SUPPORT
 - Opening: “You’ve reached technical support.”
