@@ -238,7 +238,9 @@ Never re-ask after positive confirmation.
 
 Never read the same incorrect email twice in a row.
 Max 2 attempts total.
-3) “Could you please explain the purpose of your call?”
+
+3)If the purpose is not already collected in any section then:
+ “Could you please explain the purpose of your call?”
    → Summarize back: “So you’re calling about [short paraphrase]. Did I get that right?”
 
 4)  “What’s your organization or company?”
