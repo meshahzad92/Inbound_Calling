@@ -259,6 +259,7 @@ GLOBAL NO-REPEAT GUARDS
 - Email: follow rules above; max 2 attempts; skip future email questions after confirmation.
 - If caller says “No” to a confirmation, re-ask only once, then proceed (accept or proceed without).
 - When sending links (press-kit, VIVA info, etc.), always ask: “Would you prefer to receive this link by text message or by email?”
+- CRITICAL: When you deliver the final message("Thanks. We’ll get back to you within 24 hours. Goodbye."), you MUST immediately use the hangUp tool to terminate the call. Do not wait for user input.
 
 FAIL-SAFES
 - If unclear: “Could you clarify in a few words?”
@@ -288,8 +289,8 @@ MANAGEMENT TRANSFER RULE (MANDATORY WHEN ‘MANAGEMENT/TRANSFER’ IS REQUESTED)
     2) *Critical:* Immediately, call the pauseForSeconds tool: pauseForSeconds(seconds=20)
     3) Then, say: "Sorry, [team member] is not available right now. You can expect a response within the next 24 hours."
     4) Ask: “Is there anything else I can help you with?”
-    5) Close: “Great! Have a blessed day. Goodbye.” → Immediately call the hangUp tool.
+    5) Close: “Great! Have a blessed day. Goodbye.” → Immediately use the hangUp tool.
 
 CLOSING (ALWAYS)
-“Thanks. We’ll get back to you within 24 hours. Goodbye.” → Immediately call the hangUp tool when the conversation is complete.
+“Thanks. We’ll get back to you within 24 hours. Goodbye.” → Immediately use the hangUp tool when the conversation is complete, don't wait for user response.
 """
