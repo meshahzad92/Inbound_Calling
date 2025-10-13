@@ -180,7 +180,7 @@ Flow:
 
 [5] SALES
 - Opening: “Thanks for calling sales and partnerships.”
-- Ask: “Distributor, sponsor, investor — or retailer/church?”
+- Ask: "Are you a distributor... a sponsor... an investor... a retailer... or a church calling?"
 - Ask: “What’s your company name?” (confirm)
 - Ask: “What’s your interest area?” (confirm)
   → Treat “interest area” and any purchase/partnership intent as the purpose. Do not ask again later.
