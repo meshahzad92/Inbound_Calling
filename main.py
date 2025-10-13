@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from twilio.twiml.voice_response import VoiceResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from ultravox_prompt import *
+
 # Import all functions from functions.py
 from functions import (
     get_single_flow_prompt,
@@ -250,57 +250,6 @@ async def pause_endpoint(seconds: int = 20):
                 "Content-Type": "application/json"
             }
         )
-
-@app.post("/api/change-stage")
-async def change_stage(request: Request):
-    """Handle stage changes from Ultravox to manage inactivity dynamically"""
-    try:
-        data = await request.json()
-        stage_name = data.get("stageName", "conversation")
-        
-        print(f"🔄 Stage change request to: {stage_name}")
-        
-        # Configure different stages with different inactivity behaviors
-        if stage_name == "menu":
-            # Menu stage - keep inactivity messages active
-            response_body = {
-                "systemPrompt": get_menu_stage_prompt(),
-                "toolResultText": f"Switched to {stage_name} stage with inactivity messages active"
-            }
-        elif stage_name == "conversation":
-            # Conversation stage - no inactivity messages (inherit from call but can't change)
-            # Use custom prompt to handle inactivity contextually
-            response_body = {
-                "systemPrompt": get_conversation_stage_prompt(),
-                "toolResultText": f"Switched to {stage_name} stage - inactivity will be handled contextually"
-            }
-        elif stage_name == "closing":
-            # Closing stage - minimal inactivity tolerance
-            response_body = {
-                "systemPrompt": get_closing_stage_prompt(),
-                "toolResultText": f"Switched to {stage_name} stage - ready to end call"
-            }
-        else:
-            response_body = {
-                "systemPrompt": get_single_flow_prompt(),
-                "toolResultText": f"Switched to default stage"
-            }
-        
-        return JSONResponse(
-            content=response_body,
-            headers={
-                'X-Ultravox-Response-Type': 'new-stage',
-                'Content-Type': 'application/json'
-            }
-        )
-        
-    except Exception as e:
-        print(f"❌ Error in stage change: {e}")
-        return JSONResponse(
-            content={"error": str(e)},
-            status_code=500
-        )
-
 
 
 if __name__ == "__main__":

@@ -455,7 +455,7 @@ RULES:
 4. ORGANIZATION → Only if explicitly mentioned, else empty.
 5. PURPOSE → The purpose of the call, as stated or confirmed by the user. Use the agent's paraphrase if confirmed, or the user's own words if not.
 6. SUMMARY → Write a short (1-2 lines) summary of the call, focusing on any details, requests, or context NOT already present in the other columns (name, phone, email, organization, purpose, department). Do NOT repeat info from those columns. Instead, mention any extra details, context, or special requests the user made, e.g. "User asked for a press kit and mentioned working with XYZ client." If nothing extra, say "No additional details provided."
-7. DELIVERY_PREFERENCE → Analyze the transcript to determine how the user wants to receive information (SMS, Email, or Both). Look for questions like "Would you like the link by SMS or email?" and the user's response. Return one of: ["Sms"], ["Email"], or ["Both"].
+7. DELIVERY_PREFERENCE → Analyze the transcript to determine how the user wants to receive information (SMS, Email, or Both). Look for questions like "Would you like the link by SMS or email?" and the user's response. Return one of: ["Sms"], ["Email"], or ["Both"]. Classify the text message response as SMS.
 
 Return JSON only:
 {{
