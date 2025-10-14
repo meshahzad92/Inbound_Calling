@@ -2,7 +2,7 @@
 
 AI-powered phone system that handles incoming calls, routes to departments, collects contact information, and automatically integrates with Google Sheets for data management and follow-up communications.
 
-## 🎯 Features
+## 🎯 Feature
 
 - **AI-Powered Conversations**: Uses Ultravox AI for natural voice interactions
 - **Department Routing**: Routes calls to 7 departments with seamless transfers
