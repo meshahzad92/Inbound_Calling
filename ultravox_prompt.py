@@ -10,7 +10,7 @@ from openai import OpenAI
 
 MANAGEMENT_REDIRECT_NUMBER = os.getenv("MANAGEMENT_REDIRECT_NUMBER")
 
-def get_single_flow_prompt(call_sid="", caller_phone="Unknown"):
+def get_single_flow_prompt(caller_phone="Unknown"):
   return f"""
 ROLE
 You are Faith Agency’s virtual receptionist. 
