@@ -219,9 +219,10 @@ PROGRESSIVE CAPTURE (ONE QUESTION PER TURN, WITH BRIEF CONFIRMATIONS)
 1) “What’s your full name?”
     
    → Confirm: “Thanks, I heard [name]. Did I get that right?”
-   → If unclear/user said its wrong, politely re-ask once.
+   → If unclear/user said its wrong, politely re-ask once as: "Kindly respell your name please".
 
-2) EMAIL CAPTURE (Applies to all departments)
+
+2) EMAIL CAPTURE (Applies to all departments for email only.)
 Policy (simple, no loops):
 Script:
 Ask: “What’s the best email for follow-up? Please spell it letter by letter.”
