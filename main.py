@@ -57,7 +57,11 @@ ULTRAVOX_CALL_CONFIG = {
             "toolName": "pauseForSeconds",
         },
         {
-            "toolName": "hangUp"  
+            "toolName": "hangUp",
+            "parameterOverrides": 
+            {
+                "strict": True
+            }  
         },
     ],
     "inactivityMessages": [
