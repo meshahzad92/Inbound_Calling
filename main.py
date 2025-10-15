@@ -57,7 +57,11 @@ ULTRAVOX_CALL_CONFIG = {
             "toolName": "pauseForSeconds",
         },
         {
-            "toolName": "hangUp"  
+            "toolName": "hangUp",
+            "parameterOverrides": 
+            {
+                "strict": True
+            }  
         },
     ],
     "inactivityMessages": [
@@ -91,7 +95,7 @@ async def incoming_call(request: Request):
         
         # Create Ultravox call configuration with single flow prompt
         call_config = ULTRAVOX_CALL_CONFIG.copy()
-        call_config['systemPrompt'] = get_single_flow_prompt()
+        call_config['systemPrompt'] = get_single_flow_prompt(caller_phone)
         
         try:
             response = await create_ultravox_call(call_config)
