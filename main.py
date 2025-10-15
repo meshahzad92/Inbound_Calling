@@ -60,7 +60,7 @@ ULTRAVOX_CALL_CONFIG = {
             "toolName": "hangUp",
             "parameterOverrides": 
             {
-                "strict": True
+                "strict": false
             }  
         },
     ],
