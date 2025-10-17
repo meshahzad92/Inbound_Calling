@@ -67,7 +67,7 @@ ULTRAVOX_CALL_CONFIG = {
     "inactivityMessages": [
         {
             "duration": "15s", 
-            "message": "I didn't hear a selection. Let's try it this way: Press 1 for Sales and Partnerships, Press 2 for VIVA Audio Bible, Press 3 for Casting and Talent, Press 4 for Press and Media, Press 5 for Technical Support, Or press 0 to leave a message."
+            "message": "I didn't hear a selection. Kindly answer the asked question."
         },
         {
         "duration": "10s",
